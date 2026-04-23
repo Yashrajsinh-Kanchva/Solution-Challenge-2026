@@ -1,0 +1,84 @@
+{
+  "Citizen": {
+    "citizen_001": {
+      "userId": "citizen_001",
+      "name": "Rahul Sharma",
+      "phone": "+919876543210",
+      "email": "rahul@example.com",
+      "aadhaarNumber": "enc:v1:9f88b0d1b5facc813b07f0df:7a2d9f73e61e8f1262511ec2789af557:0f6c5b298d",
+      "isVerified": true,
+      "location": {
+        "lat": 28.6139,
+        "lng": 77.209,
+        "address": "Connaught Place, New Delhi"
+      },
+      "createdAt": "2026-04-23T10:00:00.000Z"
+    }
+  },
+  "Admin": {
+    "admin_001": {
+      "adminId": "admin_001",
+      "name": "System Admin",
+      "email": "admin@volunteerbridge.org",
+      "phone": "+911112223334"
+    }
+  },
+  "NGO": {
+    "ngo_001": {
+      "ngoId": "ngo_001",
+      "name": "Care Relief",
+      "phone": "+919900001111",
+      "location": {
+        "lat": 28.6315,
+        "lng": 77.2167,
+        "address": "Mandi House, New Delhi"
+      },
+      "categories": ["food", "medical", "shelter"],
+      "serviceRadius": 15,
+      "availableResources": {
+        "food": 120,
+        "medicine": 80
+      },
+      "verified": true,
+      "rating": 4.7
+    }
+  },
+  "Volunteer": {
+    "vol_001": {
+      "volunteerId": "vol_001",
+      "name": "Anita Verma",
+      "phone": "+919822334455",
+      "skills": ["medical", "delivery"],
+      "location": {
+        "lat": 28.62,
+        "lng": 77.23,
+        "address": "India Gate, New Delhi"
+      },
+      "availability": true,
+      "status": "idle",
+      "currentRequestId": null,
+      "ngoId": "ngo_001"
+    }
+  },
+  "Request": {
+    "req_001": {
+      "requestId": "req_001",
+      "userId": "citizen_001",
+      "title": "Need urgent first aid",
+      "description": "Senior citizen requires immediate medical support",
+      "category": "medical",
+      "aiCategory": "medical",
+      "urgency": "high",
+      "location": {
+        "lat": 28.614,
+        "lng": 77.21,
+        "address": "Near CP Metro Gate 3"
+      },
+      "status": "pending_admin",
+      "suggestedNGOs": [],
+      "assignedNgoId": null,
+      "assignedVolunteerId": null,
+      "createdAt": "2026-04-23T10:10:00.000Z"
+    }
+  }
+}

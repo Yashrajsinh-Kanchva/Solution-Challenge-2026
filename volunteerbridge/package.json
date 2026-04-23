@@ -1,1 +1,27 @@
-{ "name": "volunteerbridge", "version": "0.0.0", "private": true, "// TODO": "Define scripts and dependencies for Next.js 14 + TypeScript + Tailwind CSS." }
+{
+	"name": "volunteerbridge",
+	"version": "1.0.0",
+	"private": true,
+	"scripts": {
+		"dev": "next dev",
+		"build": "next build",
+		"start": "next start",
+		"lint": "next lint",
+		"api:dev": "tsx watch api/server.ts",
+		"api:start": "node dist/api/server.js",
+		"api:build": "tsc -p tsconfig.json"
+	},
+	"dependencies": {
+		"cors": "^2.8.5",
+		"dotenv": "^16.4.5",
+		"express": "^4.19.2",
+		"firebase-admin": "^12.6.0"
+	},
+	"devDependencies": {
+		"@types/cors": "^2.8.17",
+		"@types/express": "^4.17.21",
+		"@types/node": "^22.10.1",
+		"tsx": "^4.19.2",
+		"typescript": "^5.7.2"
+	}
+}
