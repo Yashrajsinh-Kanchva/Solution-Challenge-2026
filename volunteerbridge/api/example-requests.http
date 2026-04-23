@@ -1,0 +1,98 @@
+@baseUrl = http://localhost:5000
+@token = YOUR_FIREBASE_ID_TOKEN
+
+### Register Citizen
+POST {{baseUrl}}/api/citizens/register
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": "citizen_001",
+  "name": "Rahul Sharma",
+  "phone": "+919876543210",
+  "email": "rahul@example.com",
+  "aadhaarNumber": "123456789012",
+  "isVerified": true,
+  "location": {
+    "lat": 28.6139,
+    "lng": 77.209,
+    "address": "Connaught Place, New Delhi"
+  }
+}
+
+### Get Citizen
+GET {{baseUrl}}/api/citizens/citizen_001
+Authorization: Bearer {{token}}
+
+### Create Request
+POST {{baseUrl}}/api/requests
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": "citizen_001",
+  "title": "Need food packets",
+  "description": "Family of 5 needs immediate food assistance",
+  "category": "food",
+  "aiCategory": "food",
+  "urgency": "high",
+  "location": {
+    "lat": 28.614,
+    "lng": 77.211,
+    "address": "Karol Bagh, New Delhi"
+  }
+}
+
+### Get All Requests
+GET {{baseUrl}}/api/requests
+Authorization: Bearer {{token}}
+
+### Get Request By ID
+GET {{baseUrl}}/api/requests/REPLACE_REQUEST_ID
+Authorization: Bearer {{token}}
+
+### Update Request Status
+PATCH {{baseUrl}}/api/requests/REPLACE_REQUEST_ID/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "in_progress"
+}
+
+### Admin Approve Request
+POST {{baseUrl}}/api/admin/requests/REPLACE_REQUEST_ID/approve
+Authorization: Bearer {{token}}
+
+### Admin Assign NGO
+POST {{baseUrl}}/api/admin/requests/REPLACE_REQUEST_ID/assign-ngo
+Authorization: Bearer {{token}}
+
+### NGO Get Assigned Requests
+GET {{baseUrl}}/api/ngos/ngo_001/requests
+Authorization: Bearer {{token}}
+
+### NGO Update Resources
+PATCH {{baseUrl}}/api/ngos/ngo_001/resources
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "food": 90,
+  "medicine": 65
+}
+
+### Assign Volunteer to Request
+POST {{baseUrl}}/api/volunteers/assign/REPLACE_REQUEST_ID
+Authorization: Bearer {{token}}
+
+### Update Volunteer Status
+PATCH {{baseUrl}}/api/volunteers/vol_001/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "offline",
+  "availability": false,
+  "currentRequestId": null
+}

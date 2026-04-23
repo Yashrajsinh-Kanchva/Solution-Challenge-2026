@@ -1,0 +1,41 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+
+    "Citizen": {
+      "$uid": {
+        ".read": "auth.uid === $uid || root.child('Admin/' + auth.uid).exists()",
+        ".write": "auth.uid === $uid || root.child('Admin/' + auth.uid).exists()"
+      }
+    },
+
+    "Admin": {
+      "$adminId": {
+        ".read": "root.child('Admin/' + auth.uid).exists()",
+        ".write": "root.child('Admin/' + auth.uid).exists()"
+      }
+    },
+
+    "NGO": {
+      "$ngoId": {
+        ".read": "root.child('Admin/' + auth.uid).exists() || auth.uid === $ngoId",
+        ".write": "root.child('Admin/' + auth.uid).exists() || auth.uid === $ngoId"
+      }
+    },
+
+    "Volunteer": {
+      "$volunteerId": {
+        ".read": "root.child('Admin/' + auth.uid).exists() || auth.uid === $volunteerId",
+        ".write": "root.child('Admin/' + auth.uid).exists() || auth.uid === $volunteerId"
+      }
+    },
+
+    "Request": {
+      "$requestId": {
+        ".read": "root.child('Admin/' + auth.uid).exists() || data.child('userId').val() === auth.uid || data.child('assignedNgoId').val() === auth.uid || data.child('assignedVolunteerId').val() === auth.uid",
+        ".write": "( !data.exists() && root.child('Citizen/' + auth.uid).exists() && newData.child('userId').val() === auth.uid ) || root.child('Admin/' + auth.uid).exists() || ( root.child('NGO/' + auth.uid).exists() && data.child('assignedNgoId').val() === auth.uid ) || ( root.child('Volunteer/' + auth.uid).exists() && data.child('assignedVolunteerId').val() === auth.uid )"
+      }
+    }
+  }
+}
