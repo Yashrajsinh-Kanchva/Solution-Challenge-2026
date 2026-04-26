@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { AuthenticatedRequest } from "@/lib/firebase/auth";
 import { dbRef } from "@/lib/firebase/firestore";
-import { RequestRecord } from "@/lib/types/rtdb";
+import { RequestRecord, VolunteerRecord, NgoRecord, VolunteerStatus } from "@/lib/types/rtdb";
 
 export async function getAssignedRequestsForNgo(
   req: AuthenticatedRequest,
@@ -114,12 +114,12 @@ export async function getNgoVolunteers(req: AuthenticatedRequest, res: Response)
 
     // Derive status and availability dynamically, supporting both legacy and new data
     const volunteers = Object.values(volunteerMap)
-      .filter(v => !v.status || v.status === "ACTIVE" || v.status === "idle" || v.status === "assigned")
-      .map(v => {
+      .filter((v: any) => !v.status || v.status === "ACTIVE" || v.status === "idle" || v.status === "assigned" || v.membershipStatus === "ACTIVE")
+      .map((v: any) => {
         const isOnActiveTask = activeVolunteerIds.has(v.volunteerId);
         return {
           ...v,
-          onTaskStatus: isOnActiveTask ? "assigned" : "idle",
+          status: isOnActiveTask ? "assigned" : "idle",
           availability: !isOnActiveTask,
           currentRequestId: isOnActiveTask ? activeTasksMap[v.volunteerId] : null
         };
@@ -196,7 +196,8 @@ export async function handleVolunteerJoinRequest(req: AuthenticatedRequest, res:
         skills: request.skills || [],
         location: request.location,
         availability: true,
-        status: "ACTIVE",
+        status: "idle",
+        membershipStatus: "ACTIVE",
         currentRequestId: null,
         ngoId: request.ngoId,
         registeredAt: new Date().toISOString()
