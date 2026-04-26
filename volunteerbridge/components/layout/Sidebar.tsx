@@ -15,6 +15,14 @@ import {
   HelpCircle,
   LogOut,
   Zap,
+  FileText,
+  History,
+  CheckSquare,
+  UploadCloud,
+  UserCheck,
+  Briefcase,
+  UserCircle,
+  Activity,
 } from "lucide-react";
 
 type SidebarProps = {
@@ -31,6 +39,16 @@ function getIcon(href: string) {
   if (href.includes("ngo-approvals"))return <ShieldCheck size={20} strokeWidth={2} />;
   if (href.includes("assignments"))  return <ClipboardList size={20} strokeWidth={2} />;
   if (href.includes("maps"))         return <Map size={20} strokeWidth={2} />;
+  // citizen routes
+  if (href.includes("report"))       return <FileText size={20} strokeWidth={2} />;
+  if (href.includes("history"))      return <History size={20} strokeWidth={2} />;
+  // ngo routes
+  if (href.includes("tasks"))        return <CheckSquare size={20} strokeWidth={2} />;
+  if (href.includes("surveys"))      return <UploadCloud size={20} strokeWidth={2} />;
+  if (href.includes("volunteers"))   return <UserCheck size={20} strokeWidth={2} />;
+  // volunteer routes
+  if (href.includes("profile"))      return <UserCircle size={20} strokeWidth={2} />;
+  if (href.includes("progress"))     return <Activity size={20} strokeWidth={2} />;
   return <LayoutDashboard size={20} strokeWidth={2} />;
 }
 
