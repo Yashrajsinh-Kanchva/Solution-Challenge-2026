@@ -35,6 +35,20 @@ export async function authenticateRequest(
 			return;
 		}
 
+		if (
+			idToken === "MOCK_NGO_TOKEN" &&
+			process.env.NODE_ENV !== "production"
+		) {
+			const ngoId = req.headers["x-ngo-id"] as string || "ngo-1";
+			req.user = {
+				uid: ngoId,
+				email: `${ngoId}@volunteerbridge.local`,
+				role: "ngo",
+			} as unknown as DecodedIdToken;
+			next();
+			return;
+		}
+
 		const decoded = await getAuth().verifyIdToken(idToken);
 		req.user = decoded;
 		next();

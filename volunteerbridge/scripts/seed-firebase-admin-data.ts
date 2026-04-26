@@ -132,7 +132,7 @@ function buildSeedData(rows: RiskRow[]) {
         availability: index % 5 !== 0,
         status: index % 5 === 0 ? "offline" : "idle",
         currentRequestId: null,
-        ngoId: null,
+        ngoId: `ngo-${(index % 6) + 1}`,
         registeredAt: `2026-03-${String(1 + (index % 26)).padStart(2, "0")}`,
       }];
     })
@@ -155,7 +155,7 @@ function buildSeedData(rows: RiskRow[]) {
         location: areas[area],
         categories: [categories[index % categories.length], categories[(index + 1) % categories.length]],
         serviceRadius: 8 + index,
-        availableResources: { food: 120 - index * 8, medicine: 60 - index * 5 },
+        availableResources: { food: 120 - index * 8, medicine: 60 - index * 5, shelter: 40 - index * 3 },
         verified: status === "approved",
         rating: 4.1 + index * 0.1,
         status,
@@ -167,31 +167,61 @@ function buildSeedData(rows: RiskRow[]) {
     })
   );
 
-  const requests = Object.fromEntries(
-    latest.map((row, index) => {
-      const id = `need-${index + 1}`;
-      const status = index % 4 === 0 ? "pending_admin" : index % 4 === 1 ? "approved" : index % 4 === 2 ? "assigned_to_ngo" : "completed";
-      return [id, {
-        id,
-        requestId: id,
-        userId: `cit-${String((index % 18) + 1).padStart(2, "0")}`,
-        title: `${row.category} support needed in ${row.area}`,
-        description: `${row.prior_requests} recent reports, ${Math.round(row.shelter_occupancy_pct * 100)}% shelter pressure, and ${row.volunteers_available} volunteers available.`,
-        summary: `${row.category} demand is ${row.label} risk based on open humanitarian indicators and local response capacity.`,
-        category: row.category,
-        aiCategory: row.category,
-        urgency: row.label === "high" ? "high" : row.label === "medium" ? "medium" : "low",
-        location: areas[row.area] || { lat: 23.0225, lng: 72.5714, address: row.area },
-        requestedBy: ngoNames[index % ngoNames.length],
-        beneficiaries: Math.max(40, row.prior_requests * 24 + Math.round(row.poverty_index * 100)),
-        status,
-        suggestedNGOs: [],
-        assignedNgoId: status === "assigned_to_ngo" ? "ngo-1" : null,
-        assignedVolunteerId: null,
-        createdAt: `2026-04-${String(18 + index).padStart(2, "0")}T10:00:00.000Z`,
-      }];
-    })
-  );
+  const requests = {
+    ...Object.fromEntries(
+      latest.map((row, index) => {
+        const id = `need-${index + 1}`;
+        const status = index % 4 === 0 ? "pending_admin" : index % 4 === 1 ? "approved" : index % 4 === 2 ? "assigned_to_ngo" : "completed";
+        return [id, {
+          id,
+          requestId: id,
+          userId: `cit-${String((index % 18) + 1).padStart(2, "0")}`,
+          title: `${row.category} support needed in ${row.area}`,
+          description: `${row.prior_requests} recent reports, ${Math.round(row.shelter_occupancy_pct * 100)}% shelter pressure, and ${row.volunteers_available} volunteers available.`,
+          summary: `${row.category} demand is ${row.label} risk based on open humanitarian indicators and local response capacity.`,
+          category: row.category,
+          aiCategory: row.category,
+          urgency: row.label === "high" ? "high" : row.label === "medium" ? "medium" : "low",
+          location: areas[row.area] || { lat: 23.0225, lng: 72.5714, address: row.area },
+          requestedBy: ngoNames[index % ngoNames.length],
+          beneficiaries: Math.max(40, row.prior_requests * 24 + Math.round(row.poverty_index * 100)),
+          status,
+          suggestedNGOs: [],
+          assignedNgoId: status === "assigned_to_ngo" ? `ngo-${(index % 6) + 1}` : null,
+          assignedVolunteerId: null,
+          createdAt: `2026-04-${String(18 + index).padStart(2, "0")}T10:00:00.000Z`,
+        }];
+      })
+    ),
+    "need-test-1": {
+      id: "need-test-1",
+      requestId: "need-test-1",
+      userId: "cit-01",
+      title: "Shared Test Request - Food",
+      description: "This is a test request visible to ALL NGOs for coordination testing.",
+      category: "Food",
+      aiCategory: "Food",
+      urgency: "medium",
+      location: areas["Ward 12"],
+      status: "assigned_to_ngo",
+      assignedNgoId: "ALL",
+      createdAt: new Date().toISOString(),
+    },
+    "need-test-2": {
+      id: "need-test-2",
+      requestId: "need-test-2",
+      userId: "cit-02",
+      title: "Shared Test Request - Health",
+      description: "Emergency medical supplies needed - visible to all NGOs.",
+      category: "Health",
+      aiCategory: "Health",
+      urgency: "high",
+      location: areas["River Belt"],
+      status: "assigned_to_ngo",
+      assignedNgoId: "ALL",
+      createdAt: new Date().toISOString(),
+    }
+  };
 
   const predictions = Object.fromEntries(
     latest.map((row, index) => [`pred-${index + 1}`, {

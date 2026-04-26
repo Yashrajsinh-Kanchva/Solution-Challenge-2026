@@ -39,6 +39,7 @@ export interface AdminRecord {
 export interface NgoResources {
   food: number;
   medicine: number;
+  shelter: number;
 }
 
 export interface NgoRecord {
@@ -77,6 +78,8 @@ export interface RequestRecord {
   status: RequestStatus;
   suggestedNGOs: string[];
   assignedNgoId: string | null;
-  assignedVolunteerId: string | null;
+  assignedVolunteerIds?: string[];
+  assignedResources?: NgoResources;
+  checklist?: { id: number; text: string; done: boolean }[];
   createdAt: string;
 }

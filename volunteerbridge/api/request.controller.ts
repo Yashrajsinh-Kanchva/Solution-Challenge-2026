@@ -49,7 +49,7 @@ export async function createRequest(req: AuthenticatedRequest, res: Response): P
       status: "pending_admin",
       suggestedNGOs: [],
       assignedNgoId: null,
-      assignedVolunteerId: null,
+      assignedVolunteerIds: [],
       createdAt: new Date().toISOString()
     };
 
@@ -115,8 +115,42 @@ export async function updateRequestStatus(req: AuthenticatedRequest, res: Respon
     const dbStatus = status === "pending" ? "pending_admin" : status;
     await dbRef(requestPath).update({ status: dbStatus });
 
+    // If task is completed, free up all assigned volunteers
+    if (dbStatus === "completed" || dbStatus === "Completed") {
+      const request = snapshot.val() as RequestRecord;
+      const volunteerIds = request.assignedVolunteerIds || [];
+      
+      if (volunteerIds.length > 0) {
+        const updates: Record<string, any> = {};
+        volunteerIds.forEach(id => {
+          updates[`Volunteer/${id}/status`] = "idle";
+          updates[`Volunteer/${id}/availability`] = true;
+          updates[`Volunteer/${id}/currentRequestId`] = null;
+        });
+        await dbRef().update(updates);
+      }
+    }
+
     res.status(200).json({ message: "Request status updated", requestId, status });
   } catch (error) {
     res.status(500).json({ error: "Failed to update request status", details: (error as Error).message });
+  }
+}
+
+export async function updateRequestChecklist(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const { requestId } = req.params;
+    const { checklist } = req.body as { checklist: any[] };
+
+    if (!checklist) {
+      res.status(400).json({ error: "checklist is required" });
+      return;
+    }
+
+    await dbRef(`Request/${requestId}`).update({ checklist });
+
+    res.status(200).json({ message: "Request checklist updated", requestId });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update checklist", details: (error as Error).message });
   }
 }

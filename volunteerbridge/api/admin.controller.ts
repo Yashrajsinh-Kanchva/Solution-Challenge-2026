@@ -34,14 +34,14 @@ export async function assignNgoForRequest(req: AuthenticatedRequest, res: Respon
     }
 
     const request = requestSnapshot.val() as RequestRecord;
+    const { ngoId: manualNgoId } = req.body;
 
     const ngoSnapshot = await dbRef("NGO").once("value");
     const ngoMap = (ngoSnapshot.val() || {}) as Record<string, NgoRecord>;
     const ngos = Object.values(ngoMap);
 
     const suggestedNGOs = suggestNgoIdsForRequest(request, ngos);
-
-    const assignedNgoId = suggestedNGOs[0] ?? null;
+    const assignedNgoId = manualNgoId || (suggestedNGOs[0] ?? null);
 
     await dbRef(`Request/${requestId}`).update({
       suggestedNGOs,

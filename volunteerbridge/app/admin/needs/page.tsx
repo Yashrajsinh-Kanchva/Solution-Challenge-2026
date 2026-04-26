@@ -21,6 +21,7 @@ const DEFAULT_FORM = {
 
 export default function NeedsPage() {
   const [requests,   setRequests]   = useState<any[]>([]);
+  const [ngos,       setNgos]       = useState<any[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showForm,   setShowForm]   = useState(false);
@@ -33,11 +34,26 @@ export default function NeedsPage() {
   const [urgencyF,   setUrgencyF]   = useState("all");
 
   useEffect(() => {
-    apiClient.getRequests()
-      .then(data => setRequests(Array.isArray(data) ? data : []))
+    Promise.all([
+      apiClient.getRequests(),
+      apiClient.getNgos()
+    ])
+      .then(([reqData, ngoData]) => {
+        setRequests(Array.isArray(reqData) ? reqData : []);
+        setNgos(Array.isArray(ngoData) ? ngoData : []);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  const onAssignNgo = async (requestId: string, ngoId: string) => {
+    try {
+      await apiClient.assignNgoToRequest(requestId, ngoId);
+      setRequests(cur => cur.map(r => r.id === requestId ? { ...r, assignedNgoId: ngoId, status: "assigned_to_ngo" } : r));
+    } catch {
+      alert("Failed to assign NGO.");
+    }
+  };
 
   // Computed stats
   const stats = useMemo(() => ({
@@ -280,6 +296,8 @@ export default function NeedsPage() {
             requests={filtered}
             onStatusChange={onStatusChange}
             onDelete={onDelete}
+            ngos={ngos}
+            onAssignNgo={onAssignNgo}
           />
         )}
       </section>
