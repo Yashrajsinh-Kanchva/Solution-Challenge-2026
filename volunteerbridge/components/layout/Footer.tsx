@@ -1,4 +1,7 @@
-// TODO: Implement this component.
 export default function Component() {
-  return null;
+  return (
+    <footer className="site-footer">
+      <p>VolunteerBridge Admin Console</p>
+    </footer>
+  );
 }

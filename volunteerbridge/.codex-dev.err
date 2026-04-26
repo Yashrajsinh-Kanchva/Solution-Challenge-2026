@@ -1,0 +1,2 @@
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename 'E:\Google v.01 T1\Solution-Challenge-2026\volunteerbridge\.next\cache\webpack\server-development\0.pack.gz_' -> 'E:\Google v.01 T1\Solution-Challenge-2026\volunteerbridge\.next\cache\webpack\server-development\0.pack.gz'
+^C

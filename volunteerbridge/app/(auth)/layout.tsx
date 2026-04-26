@@ -1,4 +1,7 @@
-// TODO: Implement this layout wrapper.
-export default function Component() {
-  return null;
+export default function Component({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <main className="auth-shell">{children}</main>;
 }

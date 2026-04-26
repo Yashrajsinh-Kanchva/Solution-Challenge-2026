@@ -3,6 +3,23 @@ import { AuthenticatedRequest } from "@/lib/firebase/auth";
 import { dbRef } from "@/lib/firebase/firestore";
 import { RequestRecord, RequestStatus } from "@/lib/types/rtdb";
 
+function toAdminNeedRequest(request: RequestRecord & Record<string, any>) {
+  return {
+    ...request,
+    id: request.id || request.requestId,
+    requestId: request.requestId,
+    location:
+      typeof request.location === "string"
+        ? request.location
+        : request.location?.address || "Unknown area",
+    requestedBy: request.requestedBy || request.userName || request.userId,
+    beneficiaries: request.beneficiaries || request.affectedPeople || 1,
+    summary: request.summary || request.description,
+    status: request.status === "pending_admin" ? "pending" : request.status,
+    createdAt: request.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+  };
+}
+
 export async function createRequest(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const { userId, title, description, category, aiCategory, urgency, location } = req.body;
@@ -48,14 +65,14 @@ export async function getAllRequests(req: AuthenticatedRequest, res: Response): 
   try {
     const snapshot = await dbRef("Request").once("value");
     if (!snapshot.exists()) {
-      res.status(200).json({ requests: [] });
+      res.status(200).json([]);
       return;
     }
 
     const raw = snapshot.val() as Record<string, RequestRecord>;
-    const requests = Object.values(raw);
+    const requests = Object.values(raw).map(toAdminNeedRequest);
 
-    res.status(200).json({ requests });
+    res.status(200).json(requests);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch requests", details: (error as Error).message });
   }
@@ -95,7 +112,8 @@ export async function updateRequestStatus(req: AuthenticatedRequest, res: Respon
       return;
     }
 
-    await dbRef(requestPath).update({ status });
+    const dbStatus = status === "pending" ? "pending_admin" : status;
+    await dbRef(requestPath).update({ status: dbStatus });
 
     res.status(200).json({ message: "Request status updated", requestId, status });
   } catch (error) {
