@@ -1,8 +1,10 @@
 export type Urgency = "low" | "medium" | "high";
 
 export type RequestStatus =
+  | "pending"
   | "pending_admin"
   | "approved"
+  | "rejected"
   | "assigned_to_ngo"
   | "assigned_to_volunteer"
   | "in_progress"

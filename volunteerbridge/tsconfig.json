@@ -18,8 +18,7 @@
 		"paths": {
 			"@/*": ["./*"]
 		},
-		"plugins": [{ "name": "next" }],
-		"ignoreDeprecations": "6.0"
+		"plugins": [{ "name": "next" }]
 	},
 	"include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "api/**/*.ts"],
 	"exclude": ["node_modules", "dist"]
