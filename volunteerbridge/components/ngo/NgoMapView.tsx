@@ -115,7 +115,15 @@ export default function NgoMapView({
 
         {/* Volunteer Markers (Blue) */}
         <MarkerClusterGroup>
-          {volunteers.map(vol => (
+          {volunteers
+            .filter(vol =>
+              vol?.location &&
+              typeof vol.location.lat === "number" &&
+              typeof vol.location.lng === "number" &&
+              isFinite(vol.location.lat) &&
+              isFinite(vol.location.lng)
+            )
+            .map(vol => (
             <Marker 
               key={vol.volunteerId} 
               position={[vol.location.lat, vol.location.lng]}
@@ -144,13 +152,21 @@ export default function NgoMapView({
         </MarkerClusterGroup>
 
         {/* Request Markers (Urgency Colors) */}
-        {requests.map(req => {
-          const color = (URGENCY_COLORS as any)[req.urgency.toLowerCase()] || "#6b7466";
+        {requests
+          .filter(req =>
+            req?.location &&
+            typeof req.location.lat === "number" &&
+            typeof req.location.lng === "number" &&
+            isFinite(req.location.lat) &&
+            isFinite(req.location.lng)
+          )
+          .map(req => {
+          const color = (URGENCY_COLORS as any)[req.urgency?.toLowerCase()] || "#6b7466";
           return (
             <Marker 
               key={req.requestId} 
               position={[req.location.lat, req.location.lng]}
-              icon={makePin(color, req.urgency.toUpperCase())}
+              icon={makePin(color, req.urgency?.toUpperCase() ?? "NEED")}
             >
               <Popup>
                 <div className="p-4 font-sans min-w-[240px]">
