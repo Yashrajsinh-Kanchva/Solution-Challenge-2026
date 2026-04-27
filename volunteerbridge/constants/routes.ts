@@ -65,6 +65,39 @@ export const ADMIN_ROUTES: NavigationRoute[] = [
 	},
 ];
 
+export const VOLUNTEER_ROUTES: NavigationRoute[] = [
+	{
+		label: "Dashboard",
+		href: "/volunteer/dashboard",
+		description: "Your overview and quick stats",
+	},
+	{
+		label: "Opportunities",
+		href: "/volunteer/opportunities",
+		description: "Browse open volunteer postings",
+	},
+	{
+		label: "My Assignments",
+		href: "/volunteer/assignments",
+		description: "Your active team and tasks",
+	},
+	{
+		label: "My Tasks",
+		href: "/volunteer/tasks",
+		description: "Personal task checklist",
+	},
+	{
+		label: "Profile",
+		href: "/volunteer/profile",
+		description: "Skills, availability and history",
+	},
+	{
+		label: "Camp Map",
+		href: "/volunteer/map",
+		description: "All camp locations on one map",
+	},
+];
+
 export const NGO_ROUTES: NavigationRoute[] = [
 	{
 		label: "Dashboard",

@@ -116,10 +116,10 @@ export async function updateRequestStatus(req: AuthenticatedRequest, res: Respon
     await dbRef(requestPath).update({ status: dbStatus });
 
     // If task is completed, free up all assigned volunteers
-    if (dbStatus === "completed" || dbStatus === "Completed") {
+    if ((dbStatus as string) === "completed" || (dbStatus as string) === "Completed") {
       const request = snapshot.val() as RequestRecord;
       const volunteerIds = request.assignedVolunteerIds || [];
-      
+
       if (volunteerIds.length > 0) {
         const updates: Record<string, any> = {};
         volunteerIds.forEach(id => {
@@ -127,7 +127,7 @@ export async function updateRequestStatus(req: AuthenticatedRequest, res: Respon
           updates[`Volunteer/${id}/availability`] = true;
           updates[`Volunteer/${id}/currentRequestId`] = null;
         });
-        await dbRef().update(updates);
+        await dbRef("/").update(updates);
       }
     }
 

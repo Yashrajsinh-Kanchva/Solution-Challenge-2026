@@ -68,8 +68,8 @@ export async function getNgoDashboardStats(req: AuthenticatedRequest, res: Respo
 
     const stats = {
       totalRequests: requests.length,
-      activeTasks: requests.filter(r => r.status !== "completed" && r.status !== "Completed").length,
-      completedTasks: requests.filter(r => r.status === "completed" || r.status === "Completed").length,
+      activeTasks: requests.filter(r => (r.status as string) !== "completed" && (r.status as string) !== "Completed").length,
+      completedTasks: requests.filter(r => (r.status as string) === "completed" || (r.status as string) === "Completed").length,
       availableVolunteers: volunteers.filter(v => v.availability).length,
       totalVolunteers: volunteers.length,
       topSkills,
@@ -103,7 +103,7 @@ export async function getNgoVolunteers(req: AuthenticatedRequest, res: Response)
     const activeTasksMap: Record<string, string> = {}; // volunteerId -> requestId
 
     requests.forEach(req => {
-      const isActive = req.status !== "completed" && req.status !== "Completed" && req.status !== "Rejected";
+      const isActive = (req.status as string) !== "completed" && (req.status as string) !== "Completed" && (req.status as string) !== "Rejected";
       if (isActive && req.assignedVolunteerIds) {
         req.assignedVolunteerIds.forEach(id => {
           activeVolunteerIds.add(id);

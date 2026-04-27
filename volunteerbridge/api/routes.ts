@@ -10,7 +10,7 @@ import {
 } from "@/api/request.controller";
 import { approveRequest, assignNgoForRequest, getAllNgos, approveNgo, getDashboardStats, getAllUsers, getAssignments, createAssignment, getAnalytics, getMapLayers } from "@/api/admin.controller";
 import { getAssignedRequestsForNgo, updateNgoResources, getNgoDashboardStats, getNgoVolunteers, assignResourcesToRequest, getNgoById, registerNgo, getVolunteerJoinRequests, handleVolunteerJoinRequest } from "@/api/ngo.controller";
-import { assignVolunteer, unassignVolunteer, updateVolunteerStatus, getVolunteerById, submitJoinRequest, getVolunteerJoinRequestsByVolunteerId } from "@/api/volunteer.controller";
+import { assignVolunteer, unassignVolunteer, updateVolunteerStatus, getVolunteerById, submitJoinRequest, getVolunteerJoinRequestsByVolunteerId, getVolunteerOpportunities, getVolunteerOpportunityById, applyToOpportunity, getVolunteerApplications, getVolunteerAssignments, updateChecklistTaskStatus, updateVolunteerProfile } from "@/api/volunteer.controller";
 import { getPredictions } from "@/api/prediction.controller";
 
 const apiRouter = Router();
@@ -55,5 +55,14 @@ apiRouter.post("/volunteers/request-join/:ngoId", requireRoles(["volunteer", "ad
 apiRouter.get("/volunteers/:volunteerId/join-requests", requireRoles(["volunteer", "admin"]), getVolunteerJoinRequestsByVolunteerId);
 apiRouter.get("/volunteers/:volunteerId", requireRoles(["admin", "ngo", "volunteer"]), getVolunteerById);
 apiRouter.patch("/volunteers/:volunteerId/status", requireRoles(["volunteer", "admin"]), updateVolunteerStatus);
+apiRouter.patch("/volunteers/:volunteerId/profile", requireRoles(["volunteer", "admin"]), updateVolunteerProfile);
+
+// Volunteer Opportunities (public to volunteers)
+apiRouter.get("/volunteer-opportunities", requireRoles(["volunteer", "admin", "ngo"]), getVolunteerOpportunities);
+apiRouter.get("/volunteer-opportunities/:opportunityId", requireRoles(["volunteer", "admin", "ngo"]), getVolunteerOpportunityById);
+apiRouter.post("/volunteer-opportunities/:opportunityId/apply", requireRoles(["volunteer"]), applyToOpportunity);
+apiRouter.get("/volunteers/:volunteerId/applications", requireRoles(["volunteer", "admin"]), getVolunteerApplications);
+apiRouter.get("/volunteers/:volunteerId/assignments", requireRoles(["volunteer", "admin"]), getVolunteerAssignments);
+apiRouter.patch("/requests/:requestId/checklist/:taskId/status", requireRoles(["volunteer", "ngo", "admin"]), updateChecklistTaskStatus);
 
 export default apiRouter;

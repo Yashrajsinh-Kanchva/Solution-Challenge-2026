@@ -24,6 +24,7 @@ import {
   UserCircle,
   Activity,
   Package,
+  Search,
 } from "lucide-react";
 
 type SidebarProps = {
@@ -56,8 +57,11 @@ function getIcon(href: string) {
   if (href.includes("surveys"))      return <UploadCloud size={20} strokeWidth={2} />;
   if (href.includes("volunteers"))   return <UserCheck size={20} strokeWidth={2} />;
   // volunteer routes
+  if (href.includes("opportunities")) return <Search size={20} strokeWidth={2} />;
+  if (href.includes("assignments"))  return <Briefcase size={20} strokeWidth={2} />;
   if (href.includes("profile"))      return <UserCircle size={20} strokeWidth={2} />;
   if (href.includes("progress"))     return <Activity size={20} strokeWidth={2} />;
+  if (href.endsWith("/map"))         return <Map size={20} strokeWidth={2} />;
   return <LayoutDashboard size={20} strokeWidth={2} />;
 }
 

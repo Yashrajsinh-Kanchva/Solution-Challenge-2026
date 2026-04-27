@@ -114,6 +114,53 @@ export const apiClient = {
     return await safeFetch(`${API_BASE}/volunteers/${volunteerId}`, { headers: getHeaders("ngo") });
   },
 
+  updateVolunteerProfile: async (volunteerId: string, payload: any) => {
+    return await safeFetch(`${API_BASE}/volunteers/${volunteerId}/profile`, {
+      method: "PATCH",
+      headers: getHeaders("volunteer"),
+      body: JSON.stringify(payload),
+    });
+  },
+
+  getVolunteerApplications: async (volunteerId: string) => {
+    const data = await safeFetch(`${API_BASE}/volunteers/${volunteerId}/applications`, { headers: getHeaders("volunteer") });
+    return Array.isArray(data) ? data : data?.applications ?? [];
+  },
+
+  // Volunteer Opportunities — NGO volunteer postings visible to volunteers
+  getVolunteerOpportunities: async () => {
+    const data = await safeFetch(`${API_BASE}/volunteer-opportunities`, { headers: getHeaders("volunteer") });
+    return Array.isArray(data) ? data : data?.opportunities ?? [];
+  },
+
+  getVolunteerOpportunity: async (opportunityId: string) => {
+    return await safeFetch(`${API_BASE}/volunteer-opportunities/${opportunityId}`, { headers: getHeaders("volunteer") });
+  },
+
+  applyToOpportunity: async (opportunityId: string, payload: any) => {
+    return await safeFetch(`${API_BASE}/volunteer-opportunities/${opportunityId}/apply`, {
+      method: "POST",
+      headers: getHeaders("volunteer"),
+      body: JSON.stringify(payload),
+    });
+  },
+
+  // Volunteer Assignments — teams, checklists, camp maps
+  getVolunteerAssignments: async (volunteerId: string) => {
+    const data = await safeFetch(`${API_BASE}/volunteers/${volunteerId}/assignments`, { headers: getHeaders("volunteer") });
+    return Array.isArray(data) ? data : data?.assignments ?? [];
+  },
+
+  updateTaskStatus: async (requestId: string, taskId: string, status: string, volunteerId: string) => {
+    return await safeFetch(`${API_BASE}/requests/${requestId}/checklist/${taskId}/status`, {
+      method: "PATCH",
+      headers: getHeaders("volunteer"),
+      body: JSON.stringify({ status, volunteerId }),
+    });
+  },
+
+
+
 
 
   getPredictions: async () => {

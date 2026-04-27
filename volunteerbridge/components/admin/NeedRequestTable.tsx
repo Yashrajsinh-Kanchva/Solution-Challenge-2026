@@ -191,12 +191,12 @@ export default function NeedRequestTable({ requests, onStatusChange, onDelete, n
                         </div>
                         <div>
                           <p style={{ fontSize:"0.65rem", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.12em", color:"#6b7466", marginBottom:"0.4rem" }}>Assign NGO</p>
-                          {req.status === "approved" || req.status === "assigned_to_ngo" ? (
+                          {(req.status as string) === "approved" || (req.status as string) === "assigned_to_ngo" ? (
                             <div style={{ display:"flex", gap:"0.5rem", alignItems:"center" }}>
                               <select 
                                 className="text-input" 
                                 style={{ margin:0, padding:"0.4rem", fontSize:"0.8rem", flex:1 }}
-                                value={selectedNgo[req.id] || req.assignedNgoId || ""}
+                                value={selectedNgo[req.id] || (req as any).assignedNgoId || ""}
                                 onChange={(e) => setSelectedNgo(prev => ({ ...prev, [req.id]: e.target.value }))}
                               >
                                 <option value="" disabled>Select NGO</option>
@@ -205,12 +205,12 @@ export default function NeedRequestTable({ requests, onStatusChange, onDelete, n
                                 ))}
                               </select>
                               <button 
-                                onClick={() => onAssignNgo?.(req.id, selectedNgo[req.id] || req.assignedNgoId || "")}
+                                onClick={() => onAssignNgo?.(req.id, selectedNgo[req.id] || (req as any).assignedNgoId || "")}
                                 className="primary-button"
                                 style={{ padding:"0.4rem 0.8rem", fontSize:"0.75rem", whiteSpace:"nowrap" }}
-                                disabled={!(selectedNgo[req.id] || req.assignedNgoId)}
+                                disabled={!(selectedNgo[req.id] || (req as any).assignedNgoId)}
                               >
-                                {req.assignedNgoId ? "Reassign" : "Assign"}
+                                {(req as any).assignedNgoId ? "Reassign" : "Assign"}
                               </button>
                             </div>
                           ) : (
@@ -218,10 +218,10 @@ export default function NeedRequestTable({ requests, onStatusChange, onDelete, n
                               Approve request first to assign an NGO.
                             </p>
                           )}
-                          {req.assignedNgoId && (
-                            <p style={{ fontSize:"0.7rem", color:"#2e7d32", fontWeight:700, marginTop:"0.5rem" }}>
-                              Current: {ngos.find(n => n.ngoId === req.assignedNgoId)?.ngoName || req.assignedNgoId}
-                            </p>
+                          {(req as any).assignedNgoId && (
+                             <p style={{ fontSize:"0.7rem", color:"#2e7d32", fontWeight:700, marginTop:"0.5rem" }}>
+                               Current: {ngos.find(n => n.ngoId === (req as any).assignedNgoId)?.ngoName || (req as any).assignedNgoId}
+                             </p>
                           )}
                         </div>
                       </div>
