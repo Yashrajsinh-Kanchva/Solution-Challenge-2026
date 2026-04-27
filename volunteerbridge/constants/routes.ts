@@ -4,6 +4,24 @@ export type NavigationRoute = {
 	description: string;
 };
 
+export const CITIZEN_ROUTES: NavigationRoute[] = [
+	{
+		label: "Dashboard",
+		href: "/citizen/dashboard",
+		description: "Your submitted reports and updates",
+	},
+	{
+		label: "Report Issue",
+		href: "/citizen/report",
+		description: "Report a local community issue",
+	},
+	{
+		label: "My Reports",
+		href: "/citizen/history",
+		description: "Track status of your past reports",
+	},
+];
+
 export const ADMIN_ROUTES: NavigationRoute[] = [
 	{
 		label: "Dashboard",
