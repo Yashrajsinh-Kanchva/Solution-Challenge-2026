@@ -42,6 +42,7 @@ export interface AdminUserProfile extends AppUser {
 export interface ManagedNeedRequest extends NeedRequest {
 	beneficiaries: number;
 	summary: string;
+	requestType?: "ISSUE" | "HELP";
 }
 
 export interface PendingNgoApproval extends NgoRegistration {

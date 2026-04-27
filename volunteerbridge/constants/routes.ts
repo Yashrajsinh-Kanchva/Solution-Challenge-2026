@@ -20,6 +20,11 @@ export const CITIZEN_ROUTES: NavigationRoute[] = [
 		href: "/citizen/history",
 		description: "Track status of your past reports",
 	},
+	{
+		label: "Request Help",
+		href: "/citizen/help",
+		description: "Request personal or individual help",
+	},
 ];
 
 export const ADMIN_ROUTES: NavigationRoute[] = [
@@ -62,5 +67,81 @@ export const ADMIN_ROUTES: NavigationRoute[] = [
 		label: "Maps",
 		href: "/admin/maps",
 		description: "Heatmap and presence map views",
+	},
+];
+
+export const VOLUNTEER_ROUTES: NavigationRoute[] = [
+	{
+		label: "Dashboard",
+		href: "/volunteer/dashboard",
+		description: "Your overview and quick stats",
+	},
+	{
+		label: "Opportunities",
+		href: "/volunteer/opportunities",
+		description: "Browse open volunteer postings",
+	},
+	{
+		label: "My Assignments",
+		href: "/volunteer/assignments",
+		description: "Your active team and tasks",
+	},
+	{
+		label: "My Tasks",
+		href: "/volunteer/tasks",
+		description: "Personal task checklist",
+	},
+	{
+		label: "Profile",
+		href: "/volunteer/profile",
+		description: "Skills, availability and history",
+	},
+	{
+		label: "Camp Map",
+		href: "/volunteer/map",
+		description: "All camp locations on one map",
+	},
+];
+
+export const NGO_ROUTES: NavigationRoute[] = [
+	{
+		label: "Dashboard",
+		href: "/ngo/dashboard",
+		description: "NGO overview and stats",
+	},
+	{
+		label: "Requests",
+		href: "/ngo/tasks",
+		description: "New requests assigned to you",
+	},
+	{
+		label: "Active Tasks",
+		href: "/ngo/active-tasks",
+		description: "Track tasks in progress",
+	},
+	{
+		label: "Task Map",
+		href: "/ngo/map",
+		description: "View tasks on the map",
+	},
+	{
+		label: "Volunteers",
+		href: "/ngo/volunteers",
+		description: "Manage your volunteers",
+	},
+	{
+		label: "Volunteer Requests",
+		href: "/ngo/volunteer-requests",
+		description: "Review and approve new volunteers",
+	},
+	{
+		label: "Resources",
+		href: "/ngo/resources",
+		description: "Track inventory and supplies",
+	},
+	{
+		label: "Surveys",
+		href: "/ngo/surveys",
+		description: "Paper surveys and field reports",
 	},
 ];

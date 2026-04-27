@@ -20,6 +20,7 @@ interface RequestPayload {
   location:      { lat: string; lng: string; area_name: string };
   beneficiaries: number;
   requestedBy:   string;
+  requestType:   "ISSUE";
 }
 
 /* ── Constants ────────────────────────────────────────────── */
@@ -157,6 +158,7 @@ export default function NeedForm() {
       location,
       beneficiaries,
       requestedBy:   "", // filled server-side from citizenId
+      requestType:   "ISSUE",
     };
 
     try {

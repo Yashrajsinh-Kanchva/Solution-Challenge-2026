@@ -39,6 +39,7 @@ export interface AdminRecord {
 export interface NgoResources {
   food: number;
   medicine: number;
+  shelter: number;
 }
 
 export interface NgoRecord {
@@ -66,22 +67,25 @@ export interface VolunteerRecord {
 }
 
 export interface RequestRecord {
-  id:                  string;
-  requestId:           string;
-  userId:              string;
-  title:               string;
-  description:         string;
-  summary:             string;
-  category:            string;
-  aiCategory:          string;
-  urgency:             Urgency;
-  location:            GeoLocation;
-  requestedBy:         string;
-  beneficiaries:       number;
-  status:              RequestStatus;
-  suggestedNGOs:       string[];
-  assignedNgoId:       string | null;
-  assignedVolunteerId: string | null;
-  createdAt:           string;
-  text:                string;
+  id: string;
+  requestId: string;
+  userId: string;
+  requestType?: "ISSUE" | "HELP";
+  title: string;
+  description: string;
+  summary: string;
+  text: string;
+  category: string;
+  aiCategory: string;
+  urgency: Urgency;
+  location: GeoLocation;
+  requestedBy: string;
+  beneficiaries: number;
+  status: RequestStatus;
+  suggestedNGOs: string[];
+  assignedNgoId: string | null;
+  assignedVolunteerIds?: string[];
+  assignedResources?: NgoResources;
+  checklist?: { id: number; text: string; done: boolean }[];
+  createdAt: string;
 }

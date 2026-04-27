@@ -23,6 +23,8 @@ import {
   Briefcase,
   UserCircle,
   Activity,
+  Package,
+  Search,
 } from "lucide-react";
 
 type SidebarProps = {
@@ -31,24 +33,36 @@ type SidebarProps = {
 };
 
 function getIcon(href: string) {
-  if (href.includes("dashboard"))    return <LayoutDashboard size={20} strokeWidth={2} />;
-  if (href.includes("users"))        return <Users size={20} strokeWidth={2} />;
-  if (href.includes("analytics"))    return <BarChart3 size={20} strokeWidth={2} />;
-  if (href.includes("needs"))        return <HeartHandshake size={20} strokeWidth={2} />;
-  if (href.includes("predictions"))  return <Brain size={20} strokeWidth={2} />;
-  if (href.includes("ngo-approvals"))return <ShieldCheck size={20} strokeWidth={2} />;
-  if (href.includes("assignments"))  return <ClipboardList size={20} strokeWidth={2} />;
+  if (href.includes("dashboard")) return <LayoutDashboard size={20} strokeWidth={2} />;
+  if (href.includes("volunteers")) return <Users size={20} strokeWidth={2} />;
+  if (href.includes("volunteer-requests")) return <UserCheck size={20} strokeWidth={2} />;
+  if (href.includes("analytics")) return <BarChart3 size={20} strokeWidth={2} />;
+  if (href.includes("needs")) return <HeartHandshake size={20} strokeWidth={2} />;
+  if (href.includes("active-tasks")) return <Zap size={20} strokeWidth={2} />;
+  if (href.includes("tasks")) return <ClipboardList size={20} strokeWidth={2} />;
+  if (href.includes("resources")) return <Package size={20} strokeWidth={2} />;
+  if (href.includes("surveys")) return <FileText size={20} strokeWidth={2} />;
+  if (href.includes("map")) return <Map size={20} strokeWidth={2} />;
+  if (href.includes("users")) return <Users size={20} strokeWidth={2} />;
+  if (href.includes("predictions")) return <Brain size={20} strokeWidth={2} />;
+  if (href.includes("ngo-approvals")) return <ShieldCheck size={20} strokeWidth={2} />;
+  if (href.includes("assignments")) return <ClipboardList size={20} strokeWidth={2} />;
   if (href.includes("maps"))         return <Map size={20} strokeWidth={2} />;
+  if (href.includes("resources"))    return <Package size={20} strokeWidth={2} />;
   // citizen routes
   if (href.includes("report"))       return <FileText size={20} strokeWidth={2} />;
   if (href.includes("history"))      return <History size={20} strokeWidth={2} />;
+  if (href.includes("help"))         return <HeartHandshake size={20} strokeWidth={2} />;
   // ngo routes
   if (href.includes("tasks"))        return <CheckSquare size={20} strokeWidth={2} />;
   if (href.includes("surveys"))      return <UploadCloud size={20} strokeWidth={2} />;
   if (href.includes("volunteers"))   return <UserCheck size={20} strokeWidth={2} />;
   // volunteer routes
+  if (href.includes("opportunities")) return <Search size={20} strokeWidth={2} />;
+  if (href.includes("assignments"))  return <Briefcase size={20} strokeWidth={2} />;
   if (href.includes("profile"))      return <UserCircle size={20} strokeWidth={2} />;
   if (href.includes("progress"))     return <Activity size={20} strokeWidth={2} />;
+  if (href.endsWith("/map"))         return <Map size={20} strokeWidth={2} />;
   return <LayoutDashboard size={20} strokeWidth={2} />;
 }
 

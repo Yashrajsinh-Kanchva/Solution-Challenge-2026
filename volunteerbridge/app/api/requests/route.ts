@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
       id:                  requestId,
       requestId,
       userId:              citizenId,
+      requestType:         body.requestType      || "ISSUE",
       title:               body.title            ?? "Untitled",
       description:         body.description      ?? "",
       summary:             body.summary          ?? body.description?.slice(0, 120) ?? "",

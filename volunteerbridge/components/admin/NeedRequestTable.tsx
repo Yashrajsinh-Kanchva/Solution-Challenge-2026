@@ -10,6 +10,8 @@ type Props = {
   requests: ManagedNeedRequest[];
   onStatusChange: (id: string, status: "approved" | "rejected") => void;
   onDelete?: (id: string) => void;
+  ngos?: any[];
+  onAssignNgo?: (requestId: string, ngoId: string) => void;
 };
 
 const URGENCY_COLOR: Record<string, string> = {
@@ -18,8 +20,9 @@ const URGENCY_COLOR: Record<string, string> = {
   low:    "background:#f0fdf4;color:#2e7d32;border:1px solid #bbf7d0",
 };
 
-export default function NeedRequestTable({ requests, onStatusChange, onDelete }: Props) {
+export default function NeedRequestTable({ requests, onStatusChange, onDelete, ngos = [], onAssignNgo }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selectedNgo, setSelectedNgo] = useState<Record<string, string>>({});
 
   if (requests.length === 0) {
     return (
@@ -35,6 +38,7 @@ export default function NeedRequestTable({ requests, onStatusChange, onDelete }:
         <thead>
           <tr>
             <th>Title &amp; Summary</th>
+            <th>Type</th>
             <th>Category</th>
             <th>Location</th>
             <th>Urgency</th>
@@ -61,6 +65,18 @@ export default function NeedRequestTable({ requests, onStatusChange, onDelete }:
                         {req.summary.slice(0, 60)}{req.summary.length > 60 ? "…" : ""}
                       </span>
                     </div>
+                  </td>
+
+                  {/* Type */}
+                  <td>
+                    <span style={{ 
+                      fontSize:"0.65rem", fontWeight:800, padding:"0.2rem 0.5rem", borderRadius:"6px", textTransform:"uppercase",
+                      background: req.requestType === "HELP" ? "#ede9fe" : "#e0f2fe",
+                      color: req.requestType === "HELP" ? "#5b21b6" : "#0369a1",
+                      border: `1px solid ${req.requestType === "HELP" ? "#ddd6fe" : "#bae6fd"}`
+                    }}>
+                      {req.requestType === "HELP" ? "Help" : "Issue"}
+                    </span>
                   </td>
 
                   {/* Category */}
@@ -187,12 +203,39 @@ export default function NeedRequestTable({ requests, onStatusChange, onDelete }:
                           <p style={{ fontSize:"0.875rem", color:"#1c1c18", fontWeight:600 }}>{req.category}</p>
                         </div>
                         <div>
-                          <p style={{ fontSize:"0.65rem", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.12em", color:"#6b7466", marginBottom:"0.4rem" }}>Beneficiaries</p>
-                          <p style={{ fontSize:"1.6rem", fontWeight:900, color:"#1c1c18", lineHeight:1 }}>{req.beneficiaries.toLocaleString()}</p>
-                          <p style={{ fontSize:"0.65rem", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.12em", color:"#6b7466", margin:"0.85rem 0 0.4rem" }}>Urgency Level</p>
-                          <p style={{ fontSize:"0.875rem", fontWeight:700, color: req.urgency === "high" ? "#ba1a1a" : req.urgency === "medium" ? "#b45309" : "#2e7d32", textTransform:"capitalize" }}>
-                            {req.urgency}
-                          </p>
+                          <p style={{ fontSize:"0.65rem", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.12em", color:"#6b7466", marginBottom:"0.4rem" }}>Assign NGO</p>
+                          {(req.status as string) === "approved" || (req.status as string) === "assigned_to_ngo" ? (
+                            <div style={{ display:"flex", gap:"0.5rem", alignItems:"center" }}>
+                              <select 
+                                className="text-input" 
+                                style={{ margin:0, padding:"0.4rem", fontSize:"0.8rem", flex:1 }}
+                                value={selectedNgo[req.id] || (req as any).assignedNgoId || ""}
+                                onChange={(e) => setSelectedNgo(prev => ({ ...prev, [req.id]: e.target.value }))}
+                              >
+                                <option value="" disabled>Select NGO</option>
+                                {ngos.map(n => (
+                                  <option key={n.ngoId} value={n.ngoId}>{n.ngoName || n.name}</option>
+                                ))}
+                              </select>
+                              <button 
+                                onClick={() => onAssignNgo?.(req.id, selectedNgo[req.id] || (req as any).assignedNgoId || "")}
+                                className="primary-button"
+                                style={{ padding:"0.4rem 0.8rem", fontSize:"0.75rem", whiteSpace:"nowrap" }}
+                                disabled={!(selectedNgo[req.id] || (req as any).assignedNgoId)}
+                              >
+                                {(req as any).assignedNgoId ? "Reassign" : "Assign"}
+                              </button>
+                            </div>
+                          ) : (
+                            <p style={{ fontSize:"0.75rem", color:"#6b7466", fontStyle:"italic" }}>
+                              Approve request first to assign an NGO.
+                            </p>
+                          )}
+                          {(req as any).assignedNgoId && (
+                             <p style={{ fontSize:"0.7rem", color:"#2e7d32", fontWeight:700, marginTop:"0.5rem" }}>
+                               Current: {ngos.find(n => n.ngoId === (req as any).assignedNgoId)?.ngoName || (req as any).assignedNgoId}
+                             </p>
+                          )}
                         </div>
                       </div>
                     </td>

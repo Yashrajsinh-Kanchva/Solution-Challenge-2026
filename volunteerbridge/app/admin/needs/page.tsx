@@ -21,6 +21,7 @@ const DEFAULT_FORM = {
 
 export default function NeedsPage() {
   const [requests,   setRequests]   = useState<any[]>([]);
+  const [ngos,       setNgos]       = useState<any[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showForm,   setShowForm]   = useState(false);
@@ -31,13 +32,29 @@ export default function NeedsPage() {
   const [statusF,    setStatusF]    = useState<StatusFilter>("all");
   const [categoryF,  setCategoryF]  = useState("all");
   const [urgencyF,   setUrgencyF]   = useState("all");
+  const [typeF,      setTypeF]      = useState("all");
 
   useEffect(() => {
-    apiClient.getRequests()
-      .then(data => setRequests(Array.isArray(data) ? data : []))
+    Promise.all([
+      apiClient.getRequests(),
+      apiClient.getNgos()
+    ])
+      .then(([reqData, ngoData]) => {
+        setRequests(Array.isArray(reqData) ? reqData : []);
+        setNgos(Array.isArray(ngoData) ? ngoData : []);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  const onAssignNgo = async (requestId: string, ngoId: string) => {
+    try {
+      await apiClient.assignNgoToRequest(requestId, ngoId);
+      setRequests(cur => cur.map(r => r.id === requestId ? { ...r, assignedNgoId: ngoId, status: "assigned_to_ngo" } : r));
+    } catch {
+      alert("Failed to assign NGO.");
+    }
+  };
 
   // Computed stats
   const stats = useMemo(() => ({
@@ -54,12 +71,13 @@ export default function NeedsPage() {
       if (statusF   !== "all" && r.status   !== statusF)   return false;
       if (categoryF !== "all" && r.category !== categoryF) return false;
       if (urgencyF  !== "all" && r.urgency  !== urgencyF)  return false;
+      if (typeF     !== "all" && (r.requestType || "ISSUE") !== typeF) return false;
       if (q && !r.title.toLowerCase().includes(q) &&
                !r.requestedBy.toLowerCase().includes(q) &&
                !r.location.toLowerCase().includes(q))      return false;
       return true;
     });
-  }, [requests, search, statusF, categoryF, urgencyF]);
+  }, [requests, search, statusF, categoryF, urgencyF, typeF]);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -219,6 +237,13 @@ export default function NeedsPage() {
             <option value="rejected">Rejected</option>
           </select>
 
+          {/* Type filter */}
+          <select className="text-input" style={{ width:"auto", margin:0 }} value={typeF} onChange={e => setTypeF(e.target.value)}>
+            <option value="all">All Types</option>
+            <option value="ISSUE">Issues</option>
+            <option value="HELP">Help Requests</option>
+          </select>
+
           {/* Category filter */}
           <select className="text-input" style={{ width:"auto", margin:0 }} value={categoryF} onChange={e => setCategoryF(e.target.value)}>
             <option value="all">All Categories</option>
@@ -280,6 +305,8 @@ export default function NeedsPage() {
             requests={filtered}
             onStatusChange={onStatusChange}
             onDelete={onDelete}
+            ngos={ngos}
+            onAssignNgo={onAssignNgo}
           />
         )}
       </section>
