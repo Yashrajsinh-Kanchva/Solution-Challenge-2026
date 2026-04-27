@@ -66,17 +66,22 @@ export interface VolunteerRecord {
 }
 
 export interface RequestRecord {
-  requestId: string;
-  userId: string;
-  title: string;
-  description: string;
-  category: string;
-  aiCategory: string;
-  urgency: Urgency;
-  location: GeoLocation;
-  status: RequestStatus;
-  suggestedNGOs: string[];
-  assignedNgoId: string | null;
+  id:                  string;
+  requestId:           string;
+  userId:              string;
+  title:               string;
+  description:         string;
+  summary:             string;
+  category:            string;
+  aiCategory:          string;
+  urgency:             Urgency;
+  location:            GeoLocation;
+  requestedBy:         string;
+  beneficiaries:       number;
+  status:              RequestStatus;
+  suggestedNGOs:       string[];
+  assignedNgoId:       string | null;
   assignedVolunteerId: string | null;
-  createdAt: string;
+  createdAt:           string;
+  text:                string;
 }

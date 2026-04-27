@@ -5,15 +5,16 @@ import { MapPin, Clock, AlertTriangle, Tag } from "lucide-react";
 type Severity = "low" | "medium" | "high" | "critical";
 
 interface ReportCardProps {
-  id:          string;
-  title:       string;
-  category:    string;
-  description: string;
-  severity:    Severity | "";
-  urgency:     string;
-  location:    { lat: string; lng: string; area_name: string };
-  timestamp:   string;
-  status:      "pending" | "in_progress" | "resolved";
+  id:            string;
+  title:         string;
+  category:      string;
+  description:   string;
+  summary:       string;
+  urgency:       string;
+  location:      { lat: number; lng: number; address: string };
+  beneficiaries: number;
+  createdAt:     string;
+  status:        "pending" | "in_progress" | "resolved" | string;
 }
 
 const SEVERITY_COLOR: Record<string, { bg: string; text: string; border: string }> = {
@@ -36,12 +37,12 @@ const CATEGORY_ICON: Record<string, string> = {
 };
 
 export default function ReportCard({
-  title, category, description, severity, urgency, location, timestamp, status,
+  title, category, summary, description, urgency, location, beneficiaries, createdAt, status,
 }: ReportCardProps) {
-  const sev    = SEVERITY_COLOR[severity] ?? SEVERITY_COLOR.low;
-  const stat   = STATUS_STYLE[status]     ?? STATUS_STYLE.pending;
-  const icon   = CATEGORY_ICON[category]  ?? "📋";
-  const date   = new Date(timestamp).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" });
+  const sev    = SEVERITY_COLOR[urgency] ?? SEVERITY_COLOR.low;
+  const stat   = STATUS_STYLE[status]    ?? STATUS_STYLE.pending;
+  const icon   = CATEGORY_ICON[category] ?? "📋";
+  const date   = new Date(createdAt).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" });
 
   return (
     <div style={card}>
@@ -70,22 +71,22 @@ export default function ReportCard({
         </span>
       </div>
 
-      {/* Description */}
-      <p style={desc}>{description}</p>
+      {/* Description / Summary */}
+      <p style={desc}>{summary || description}</p>
 
       {/* Meta row */}
       <div style={metaRow}>
-        {location.area_name && (
-          <MetaChip icon={<MapPin size={12} />} text={location.area_name.split(",")[0]} />
-        )}
-        {severity && (
-          <span style={{ ...badge, background:sev.bg, color:sev.text, border:`1px solid ${sev.border}` }}>
-            <AlertTriangle size={11} style={{ marginRight:"3px" }} />
-            {severity.charAt(0).toUpperCase() + severity.slice(1)}
-          </span>
+        {location.address && (
+          <MetaChip icon={<MapPin size={12} />} text={location.address.split(",")[0]} />
         )}
         {urgency && (
-          <MetaChip icon={<Tag size={12} />} text={urgency === "immediate" ? "Immediate" : urgency === "24h" ? "Within 24h" : "Can Wait"} />
+          <span style={{ ...badge, background:sev.bg, color:sev.text, border:`1px solid ${sev.border}` }}>
+            <AlertTriangle size={11} style={{ marginRight:"3px" }} />
+            {urgency.charAt(0).toUpperCase() + urgency.slice(1)} Urgency
+          </span>
+        )}
+        {beneficiaries > 0 && (
+          <MetaChip icon={<Tag size={12} />} text={`${beneficiaries} Affected`} />
         )}
         <MetaChip icon={<Clock size={12} />} text={date} />
       </div>

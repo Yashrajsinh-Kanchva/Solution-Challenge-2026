@@ -9,11 +9,12 @@ type Report = {
   title: string;
   category: string;
   description: string;
-  severity: "low" | "medium" | "high" | "critical";
+  summary: string;
   urgency: string;
-  location: { lat: string; lng: string; area_name: string };
-  status: "pending" | "in_progress" | "resolved";
-  timestamp: string;
+  location: { lat: number; lng: number; address: string };
+  beneficiaries: number;
+  status: "pending" | "in_progress" | "resolved" | string;
+  createdAt: string;
 };
 
 const STATUS_FILTERS = ["all", "pending", "in_progress", "resolved"] as const;
@@ -35,13 +36,13 @@ export default function MyReportsPage() {
   const fetchReports = () => {
     setLoading(true);
     setError("");
-    fetch("/api/reports")
+    fetch("/api/requests")
       .then(r => r.json())
       .then(data => {
         if (data.error) throw new Error(data.error);
-        setReports(data.reports ?? []);
+        setReports(data.requests ?? []);
       })
-      .catch(e => setError(e.message ?? "Failed to load reports"))
+      .catch(e => setError(e.message ?? "Failed to load requests"))
       .finally(() => setLoading(false));
   };
 

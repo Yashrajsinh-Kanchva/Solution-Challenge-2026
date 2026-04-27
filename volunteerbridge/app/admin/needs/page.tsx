@@ -69,7 +69,7 @@ export default function NeedsPage() {
         ...formState,
         beneficiaries: Number(formState.beneficiaries),
         status: "pending",
-        createdAt: new Date().toISOString().slice(0, 10),
+        createdAt: new Date().toISOString(),
       });
       setRequests(cur => [newReq, ...cur]);
       setFormState(DEFAULT_FORM);

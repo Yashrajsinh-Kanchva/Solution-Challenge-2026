@@ -16,7 +16,7 @@ function toAdminNeedRequest(request: RequestRecord & Record<string, any>) {
     beneficiaries: request.beneficiaries || request.affectedPeople || 1,
     summary: request.summary || request.description,
     status: request.status === "pending_admin" ? "pending" : request.status,
-    createdAt: request.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+    createdAt: request.createdAt || new Date().toISOString(),
   };
 }
 
@@ -38,14 +38,19 @@ export async function createRequest(req: AuthenticatedRequest, res: Response): P
     }
 
     const payload: RequestRecord = {
+      id: requestId,
       requestId,
       userId,
       title,
       description,
+      summary: description?.slice(0, 120) || "",
+      text: description || "",
       category,
       aiCategory: aiCategory || category,
       urgency,
       location,
+      requestedBy: userId,
+      beneficiaries: 1,
       status: "pending_admin",
       suggestedNGOs: [],
       assignedNgoId: null,
@@ -70,7 +75,9 @@ export async function getAllRequests(req: AuthenticatedRequest, res: Response): 
     }
 
     const raw = snapshot.val() as Record<string, RequestRecord>;
-    const requests = Object.values(raw).map(toAdminNeedRequest);
+    const requests = Object.values(raw)
+      .map(toAdminNeedRequest)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     res.status(200).json(requests);
   } catch (error) {
