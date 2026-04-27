@@ -10,7 +10,7 @@ import {
 } from "@/api/request.controller";
 import { approveRequest, assignNgoForRequest, getAllNgos, approveNgo, getDashboardStats, getAllUsers, getAssignments, createAssignment, getAnalytics, getMapLayers } from "@/api/admin.controller";
 import { getAssignedRequestsForNgo, updateNgoResources, getNgoDashboardStats, getNgoVolunteers, assignResourcesToRequest, getNgoById, registerNgo, getVolunteerJoinRequests, handleVolunteerJoinRequest } from "@/api/ngo.controller";
-import { assignVolunteer, unassignVolunteer, updateVolunteerStatus, getVolunteerById, submitJoinRequest, getVolunteerJoinRequestsByVolunteerId, getVolunteerOpportunities, getVolunteerOpportunityById, applyToOpportunity, getVolunteerApplications, getVolunteerAssignments, updateChecklistTaskStatus, updateVolunteerProfile } from "@/api/volunteer.controller";
+import { assignVolunteer, unassignVolunteer, updateVolunteerStatus, getVolunteerById, getAllVolunteers, submitJoinRequest, getVolunteerJoinRequestsByVolunteerId, getVolunteerOpportunities, getVolunteerOpportunityById, applyToOpportunity, getVolunteerApplications, getVolunteerAssignments, updateChecklistTaskStatus, updateVolunteerProfile } from "@/api/volunteer.controller";
 import { getPredictions } from "@/api/prediction.controller";
 
 const apiRouter = Router();
@@ -49,6 +49,7 @@ apiRouter.get("/ngos/:ngoId", requireRoles(["ngo", "admin"]), getNgoById);
 apiRouter.patch("/ngos/:ngoId/resources", requireRoles(["ngo", "admin"]), updateNgoResources);
 apiRouter.post("/ngos/:ngoId/requests/:requestId/resources", requireRoles(["ngo", "admin"]), assignResourcesToRequest);
 
+apiRouter.get("/volunteers", requireRoles(["admin", "ngo", "volunteer"]), getAllVolunteers);
 apiRouter.post("/volunteers/assign/:requestId", requireRoles(["admin", "ngo"]), assignVolunteer);
 apiRouter.post("/volunteers/unassign/:requestId", requireRoles(["admin", "ngo"]), unassignVolunteer);
 apiRouter.post("/volunteers/request-join/:ngoId", requireRoles(["volunteer", "admin"]), submitJoinRequest);

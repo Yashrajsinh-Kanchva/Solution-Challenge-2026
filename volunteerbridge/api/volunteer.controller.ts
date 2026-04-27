@@ -203,6 +203,29 @@ export async function submitJoinRequest(req: AuthenticatedRequest, res: Response
   }
 }
 
+export async function getAllVolunteers(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const snapshot = await dbRef("Volunteer").once("value");
+    if (!snapshot.exists()) {
+      res.status(200).json([]);
+      return;
+    }
+    const raw = snapshot.val() as Record<string, VolunteerRecord>;
+    const volunteers = Object.values(raw).map(v => ({
+      volunteerId:  v.volunteerId,
+      name:         v.name,
+      skills:       v.skills ?? [],
+      ngoId:        v.ngoId,
+      status:       v.status,
+      availability: v.availability,
+      location:     v.location ?? null,
+    }));
+    res.status(200).json(volunteers);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch volunteers", details: (error as Error).message });
+  }
+}
+
 export async function getVolunteerById(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const { volunteerId } = req.params;
@@ -222,7 +245,8 @@ export async function getVolunteerById(req: AuthenticatedRequest, res: Response)
 
     const volunteer = volSnapshot.val() as VolunteerRecord;
     
-    if ((volunteer.status as string) !== "ACTIVE") {
+    // Case-insensitive status check so volunteers stored as "active" or "ACTIVE" both work
+    if ((volunteer.status as string)?.toUpperCase() !== "ACTIVE") {
       res.status(404).json({ error: "Volunteer is not active or approved" });
       return;
     }

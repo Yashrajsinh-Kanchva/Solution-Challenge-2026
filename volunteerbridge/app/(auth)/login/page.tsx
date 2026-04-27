@@ -6,7 +6,8 @@ import { AppRole, ROLES } from "@/constants/roles";
 import { Loader2, User, ChevronRight, CheckCircle2, ShieldCheck, Plus, Zap } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 
-type CitizenSlim = { id: string; name: string; area: string; status: string };
+type CitizenSlim    = { id: string; name: string; area: string; status: string };
+type VolunteerSlim  = { volunteerId: string; name: string; skills: string[]; ngoId?: string; status?: string };
 
 const roleOptions: AppRole[] = [ROLES.ADMIN, ROLES.NGO, ROLES.CITIZEN, ROLES.VOLUNTEER];
 
@@ -36,6 +37,12 @@ export default function LoginPage() {
   const [showRegistration,  setShowRegistration]  = useState(false);
   const [showVolunteerJoin, setShowVolunteerJoin] = useState(false);
   const [submitting,        setSubmitting]        = useState(false);
+
+  // Volunteer login dropdown
+  const [volunteers,      setVolunteers]      = useState<VolunteerSlim[]>([]);
+  const [selectedVolunteerId, setSelectedVolunteerId] = useState<string>("");
+  const [loadingVolunteers,   setLoadingVolunteers]   = useState(false);
+  const [volunteerError,      setVolunteerError]      = useState("");
 
   const [ngoForm, setNgoForm] = useState({
     ngoName: "", contactName: "", email: "", phone: "", mission: "", area: "",
@@ -78,11 +85,29 @@ export default function LoginPage() {
     if (role === ROLES.NGO || role === ROLES.VOLUNTEER) fetchNgos();
   }, [role]);
 
+  /* ── Fetch volunteers when Volunteer role selected ── */
+  useEffect(() => {
+    if (role !== ROLES.VOLUNTEER) return;
+    setLoadingVolunteers(true);
+    setVolunteerError("");
+    apiClient.getAllVolunteers()
+      .then((data: VolunteerSlim[]) => {
+        setVolunteers(data);
+        if (data.length > 0) setSelectedVolunteerId(data[0].volunteerId);
+        else setVolunteerError("No volunteers found. Register a volunteer via 'Request to Join' below.");
+      })
+      .catch(() => setVolunteerError("Failed to load volunteers from database."))
+      .finally(() => setLoadingVolunteers(false));
+  }, [role]);
+
   /* ── Submit ── */
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (role === ROLES.CITIZEN && !citizenId) {
       setCitizenError("Please select a citizen."); return;
+    }
+    if (role === ROLES.VOLUNTEER && !selectedVolunteerId) {
+      setVolunteerError("Please select a volunteer."); return;
     }
     const selected = ngos.find(n => (n.ngoId || n.id) === selectedNgoId);
     if (role === ROLES.NGO && selected?.status === "pending") {
@@ -93,9 +118,7 @@ export default function LoginPage() {
     document.cookie = `vb_role=${role}; path=/`;
     if (role === ROLES.CITIZEN)   document.cookie = `vb_citizen_id=${citizenId}; path=/`;
     if (role === ROLES.NGO)       document.cookie = `vb_ngo_id=${selectedNgoId}; path=/`;
-    if (role === ROLES.VOLUNTEER) {
-      document.cookie = `vb_volunteer_id=${volunteerForm.volunteerId || "vol-101"}; path=/`;
-    }
+    if (role === ROLES.VOLUNTEER) document.cookie = `vb_volunteer_id=${selectedVolunteerId}; path=/`;
 
     const destinations: Record<AppRole, string> = {
       [ROLES.ADMIN]:     "/admin/dashboard",
@@ -331,15 +354,63 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Volunteer — enter ID or request to join */}
+          {/* Volunteer — dropdown from database */}
           {role === ROLES.VOLUNTEER && (
             <div className="space-y-3 animate-in slide-in-from-top duration-500">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-on-surface uppercase tracking-widest ml-1">Volunteer ID (for Login)</label>
-                <input value={volunteerForm.volunteerId} onChange={e => setVolunteerForm({...volunteerForm, volunteerId: e.target.value})} placeholder="e.g. vol-101" className="w-full px-5 py-4 bg-surface-variant/20 border-2 border-outline/60 rounded-2xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-inner" />
+              <div className="flex justify-between items-center px-1">
+                <label style={labelStyle}>
+                  Select Volunteer
+                  <span style={{ fontWeight: 400, color: "#6b7466", marginLeft: "0.4rem" }}>(fetched from database)</span>
+                </label>
               </div>
+
+              {loadingVolunteers ? (
+                <div style={loadingBox}>
+                  <Loader2 size={18} style={{ animation: "vb-spin 1s linear infinite" }} />
+                  Loading volunteers from database…
+                </div>
+              ) : volunteers.length > 0 ? (
+                <>
+                  <select
+                    id="volunteer-select"
+                    value={selectedVolunteerId}
+                    onChange={e => setSelectedVolunteerId(e.target.value)}
+                    style={selectStyle}
+                  >
+                    {volunteers.map((v, idx) => (
+                      <option key={v.volunteerId} value={v.volunteerId}>
+                        {idx + 1}. {v.name || v.volunteerId}
+                        {v.status ? ` — ${v.status}` : ""}
+                        {v.skills?.length ? ` (${v.skills.slice(0, 2).join(", ")})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {/* Preview chip */}
+                  {(() => {
+                    const sel = volunteers.find(v => v.volunteerId === selectedVolunteerId);
+                    return sel ? (
+                      <div style={previewChip}>
+                        <User size={14} />
+                        <strong>{sel.name || sel.volunteerId}</strong>
+                        {sel.skills?.length > 0 && (
+                          <>
+                            <span style={{ color: "#6b7466" }}>·</span>
+                            <span>{sel.skills.slice(0, 3).join(", ")}</span>
+                          </>
+                        )}
+                        <span style={{ marginLeft: "auto", fontSize: "0.7rem", fontWeight: 700, color: sel.status?.toUpperCase() === "ACTIVE" ? "#2e7d32" : "#b45309" }}>
+                          {(sel.status || "ACTIVE").toUpperCase()}
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
+                </>
+              ) : null}
+
+              {volunteerError && <p style={{ color: "#ba1a1a", fontSize: "0.8rem", marginTop: "0.4rem" }}>{volunteerError}</p>}
+
               <button type="button" onClick={() => setShowVolunteerJoin(true)} className="w-full py-4 border-2 border-dashed border-outline/60 text-secondary/60 rounded-2xl font-bold text-sm hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-2">
-                <Plus size={18} /> Request to Join NGO
+                <Plus size={18} /> Not listed? Request to Join an NGO
               </button>
             </div>
           )}

@@ -15,21 +15,25 @@ export default function VolunteerDashboard() {
   const [joinRequests, setJoinRequests] = useState<any[]>([]);
   const [opportunities, setOpportunities] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
+  const [volunteerProfile, setVolunteerProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const volunteerId = getCookie("vb_volunteer_id") || "vol-101";
+  const volunteerId = getCookie("vb_volunteer_id") || "";
 
   useEffect(() => {
+    if (!volunteerId) { setLoading(false); return; }
     const fetchAll = async () => {
       setLoading(true);
-      const [reqData, oppData, assignData] = await Promise.allSettled([
+      const [reqData, oppData, assignData, profileData] = await Promise.allSettled([
         apiClient.getVolunteerJoinRequestsByVolunteerId(volunteerId),
         apiClient.getVolunteerOpportunities(),
         apiClient.getVolunteerAssignments(volunteerId),
+        apiClient.getVolunteer(volunteerId),
       ]);
-      if (reqData.status === "fulfilled") setJoinRequests(reqData.value || []);
-      if (oppData.status === "fulfilled") setOpportunities((oppData.value || []).slice(0, 3));
-      if (assignData.status === "fulfilled") setAssignments(assignData.value || []);
+      if (reqData.status === "fulfilled")     setJoinRequests(reqData.value || []);
+      if (oppData.status === "fulfilled")     setOpportunities((oppData.value || []).slice(0, 3));
+      if (assignData.status === "fulfilled")  setAssignments(assignData.value || []);
+      if (profileData.status === "fulfilled" && profileData.value) setVolunteerProfile(profileData.value);
       setLoading(false);
     };
     fetchAll();
@@ -66,17 +70,17 @@ export default function VolunteerDashboard() {
         <div>
           <h1 className="text-4xl font-black text-on-surface tracking-tight">Volunteer Portal</h1>
           <p className="text-secondary/60 font-medium mt-1">
-            Welcome back, <span className="text-primary font-black">{volunteerId}</span>
+            Welcome back, <span className="text-primary font-black">{volunteerProfile?.name || volunteerId}</span>
           </p>
         </div>
         <div className="flex gap-3">
           <div className="bg-white px-5 py-3 rounded-2xl border-2 border-outline/60 shadow-sm flex items-center gap-3">
             <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center text-primary font-black text-sm">
-              {volunteerId.charAt(0).toUpperCase()}
+              {(volunteerProfile?.name || volunteerId).charAt(0).toUpperCase()}
             </div>
             <div>
-              <p className="text-[10px] font-black text-secondary/40 uppercase tracking-widest leading-none mb-0.5">Volunteer ID</p>
-              <p className="text-sm font-bold text-on-surface">{volunteerId}</p>
+              <p className="text-[10px] font-black text-secondary/40 uppercase tracking-widest leading-none mb-0.5">Volunteer</p>
+              <p className="text-sm font-bold text-on-surface">{volunteerProfile?.name || volunteerId}</p>
             </div>
           </div>
         </div>

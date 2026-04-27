@@ -49,6 +49,20 @@ export async function authenticateRequest(
 			return;
 		}
 
+		if (
+			idToken === "MOCK_VOLUNTEER_TOKEN" &&
+			process.env.NODE_ENV !== "production"
+		) {
+			const volunteerId = req.headers["x-volunteer-id"] as string || "vol-unknown";
+			req.user = {
+				uid: volunteerId,
+				email: `${volunteerId}@volunteerbridge.local`,
+				role: "volunteer",
+			} as unknown as DecodedIdToken;
+			next();
+			return;
+		}
+
 		const decoded = await getAuth().verifyIdToken(idToken);
 		req.user = decoded;
 		next();

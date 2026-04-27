@@ -9,12 +9,21 @@ import { getCookie } from "../utils/cookies";
 const getHeaders = (role = "admin") => {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${role === "ngo" ? "MOCK_NGO_TOKEN" : "MOCK_ADMIN_TOKEN"}`,
+    Authorization: `Bearer ${
+      role === "ngo"       ? "MOCK_NGO_TOKEN" :
+      role === "volunteer" ? "MOCK_VOLUNTEER_TOKEN" :
+                            "MOCK_ADMIN_TOKEN"
+    }`,
   };
   
   if (role === "ngo") {
     const ngoId = getCookie("vb_ngo_id");
     if (ngoId) headers["x-ngo-id"] = ngoId;
+  }
+
+  if (role === "volunteer") {
+    const volunteerId = getCookie("vb_volunteer_id");
+    if (volunteerId) headers["x-volunteer-id"] = volunteerId;
   }
   
   return headers;
@@ -108,6 +117,11 @@ export const apiClient = {
   getVolunteerJoinRequestsByVolunteerId: async (volunteerId: string) => {
     const data = await safeFetch(`${API_BASE}/volunteers/${volunteerId}/join-requests`, { headers: getHeaders("volunteer") });
     return data?.requests ?? [];
+  },
+
+  getAllVolunteers: async () => {
+    const data = await safeFetch(`${API_BASE}/volunteers`, { headers: getHeaders("volunteer") });
+    return Array.isArray(data) ? data : [];
   },
 
   getVolunteer: async (volunteerId: string) => {
