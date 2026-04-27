@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Clock, AlertTriangle, Tag } from "lucide-react";
+import { MapPin, Clock, AlertTriangle, Tag, ThumbsUp, ThumbsDown, CheckCircle } from "lucide-react";
 
 type Severity = "low" | "medium" | "high" | "critical";
 
@@ -15,6 +15,11 @@ interface ReportCardProps {
   beneficiaries: number;
   createdAt:     string;
   status:        "pending" | "in_progress" | "resolved" | string;
+  upvotes?:      number;
+  downvotes?:    number;
+  verifiedCount?:number;
+  onVote?:       (id: string, type: "UPVOTE" | "DOWNVOTE") => void;
+  onVerify?:     (id: string) => void;
 }
 
 const SEVERITY_COLOR: Record<string, { bg: string; text: string; border: string }> = {
@@ -37,7 +42,8 @@ const CATEGORY_ICON: Record<string, string> = {
 };
 
 export default function ReportCard({
-  title, category, summary, description, urgency, location, beneficiaries, createdAt, status,
+  id, title, category, summary, description, urgency, location, beneficiaries, createdAt, status,
+  upvotes = 0, downvotes = 0, verifiedCount = 0, onVote, onVerify
 }: ReportCardProps) {
   const sev    = SEVERITY_COLOR[urgency] ?? SEVERITY_COLOR.low;
   const stat   = STATUS_STYLE[status]    ?? STATUS_STYLE.pending;
@@ -89,6 +95,28 @@ export default function ReportCard({
           <MetaChip icon={<Tag size={12} />} text={`${beneficiaries} Affected`} />
         )}
         <MetaChip icon={<Clock size={12} />} text={date} />
+      </div>
+
+      {/* Validation Actions */}
+      <div style={{ display:"flex", gap:"0.5rem", marginTop:"0.5rem", borderTop:"1px dashed #e8edca", paddingTop:"1rem" }}>
+        <button 
+          onClick={() => onVote?.(id, "UPVOTE")}
+          style={{ display:"flex", alignItems:"center", gap:"0.3rem", padding:"0.4rem 0.8rem", borderRadius:"8px", background:"#f0fdf4", border:"1px solid #bbf7d0", color:"#166534", fontSize:"0.8rem", fontWeight:600, cursor:"pointer", transition:"all 0.2s" }}
+        >
+          <ThumbsUp size={14} /> {upvotes}
+        </button>
+        <button 
+          onClick={() => onVote?.(id, "DOWNVOTE")}
+          style={{ display:"flex", alignItems:"center", gap:"0.3rem", padding:"0.4rem 0.8rem", borderRadius:"8px", background:"#fef2f2", border:"1px solid #fecaca", color:"#991b1b", fontSize:"0.8rem", fontWeight:600, cursor:"pointer", transition:"all 0.2s" }}
+        >
+          <ThumbsDown size={14} /> {downvotes}
+        </button>
+        <button 
+          onClick={() => onVerify?.(id)}
+          style={{ display:"flex", alignItems:"center", gap:"0.3rem", padding:"0.4rem 0.8rem", borderRadius:"8px", background:"#eff6ff", border:"1px solid #bfdbfe", color:"#1e40af", fontSize:"0.8rem", fontWeight:600, cursor:"pointer", transition:"all 0.2s", marginLeft:"auto" }}
+        >
+          <CheckCircle size={14} /> Still Exists ({verifiedCount})
+        </button>
       </div>
     </div>
   );

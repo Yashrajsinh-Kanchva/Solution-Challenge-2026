@@ -15,7 +15,19 @@ export async function approveRequest(req: AuthenticatedRequest, res: Response): 
       return;
     }
 
+    const requestData = snapshot.val() as RequestRecord;
     await dbRef(requestPath).update({ status: "approved" });
+
+    if (requestData.userId) {
+      try {
+        const userRef = dbRef(`Citizen/${requestData.userId}/trustScore`);
+        const userSnap = await userRef.once("value");
+        let score = userSnap.exists() ? userSnap.val() : 1;
+        await userRef.set(score + 10);
+      } catch (e) {
+        console.error("Failed to update trust score", e);
+      }
+    }
 
     res.status(200).json({ message: "Request approved", requestId });
   } catch (error) {

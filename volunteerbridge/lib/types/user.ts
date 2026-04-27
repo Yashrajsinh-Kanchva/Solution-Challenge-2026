@@ -7,6 +7,7 @@ export interface AppUser {
 	email: string;
 	role: UserRole;
 	status: UserStatus;
+	trustScore?: number; // Credibility score for voting/validation
 	registeredAt: string;
 }
 

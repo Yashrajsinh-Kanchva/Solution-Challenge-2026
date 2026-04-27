@@ -268,4 +268,26 @@ export const apiClient = {
   getMapLayers: async () => {
     return (await safeFetch(`${API_BASE}/map-layers`, { headers: getHeaders() })) ?? {};
   },
+
+  voteOnRequest: async (requestId: string, userId: string, voteType: "UPVOTE" | "DOWNVOTE") => {
+    const res = await fetch(`${API_BASE}/requests/${requestId}/vote`, {
+      method: "POST",
+      headers: getHeaders("citizen"),
+      body: JSON.stringify({ userId, voteType }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Failed to vote");
+    return data;
+  },
+
+  verifyRequest: async (requestId: string, userId: string) => {
+    const res = await fetch(`${API_BASE}/requests/${requestId}/verify`, {
+      method: "POST",
+      headers: getHeaders("citizen"),
+      body: JSON.stringify({ userId }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Failed to verify");
+    return data;
+  },
 };

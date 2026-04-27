@@ -26,6 +26,65 @@ export default function CitizenDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
+  const handleVote = async (requestId: string, type: "UPVOTE" | "DOWNVOTE") => {
+    let citizenId = "";
+    if (typeof document !== "undefined") {
+      citizenId = document.cookie.split("; ").find(row => row.startsWith("vb_citizen_id="))?.split("=")[1] || "";
+    }
+    if (!citizenId) return alert("You must be logged in as a citizen to vote.");
+
+    // Check if we already updated it locally to prevent spam clicking
+    const targetReport = reports.find(r => r.id === requestId);
+    if (targetReport?._userVoted) {
+      alert("You have already voted on this request.");
+      return;
+    }
+
+    try {
+      await apiClient.voteOnRequest(requestId, citizenId, type);
+
+      // Optimistic update
+      setReports(prev => prev.map(r => {
+        if (r.id === requestId) {
+          return {
+            ...r,
+            upvotes: type === "UPVOTE" ? (r.upvotes || 0) + 1 : (r.upvotes || 0),
+            downvotes: type === "DOWNVOTE" ? (r.downvotes || 0) + 1 : (r.downvotes || 0),
+            _userVoted: true
+          };
+        }
+        return r;
+      }));
+    } catch (e: any) {
+      alert(`Failed to vote: ${e.message}`);
+    }
+  };
+
+  const handleVerify = async (requestId: string) => {
+    let citizenId = "";
+    if (typeof document !== "undefined") {
+      citizenId = document.cookie.split("; ").find(row => row.startsWith("vb_citizen_id="))?.split("=")[1] || "";
+    }
+    if (!citizenId) return alert("You must be logged in as a citizen to verify.");
+
+    // Check if we already updated it locally to prevent spam clicking
+    const targetReport = reports.find(r => r.id === requestId);
+    if (targetReport?._userVerified) {
+      alert("You have already verified this request.");
+      return;
+    }
+
+    try {
+      await apiClient.verifyRequest(requestId, citizenId);
+
+      // Optimistic update
+      setReports(prev => prev.map(r => r.id === requestId ? { ...r, verifiedCount: (r.verifiedCount || 0) + 1, _userVerified: true } : r));
+      alert("Verification recorded! Thank you.");
+    } catch (e: any) {
+      alert(`Failed to verify: ${e.message}`);
+    }
+  };
+
   // Compute trending data dynamically from actual reports
   const trendingIssues = useMemo(() => {
     const now = new Date();
@@ -208,15 +267,15 @@ export default function CitizenDashboard() {
               
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid #e8edca" }}>
                 <div style={{ display: "flex", gap: "0.4rem" }}>
-                  <button style={voteBtn} title="Upvote - This issue affects me too">
-                    <ArrowUp size={14} /> <span style={{ fontWeight: 600, fontSize: "0.8rem" }}>{Math.floor(Math.random() * 50) + 1}</span>
+                  <button onClick={() => handleVote(report.id, "UPVOTE")} style={voteBtn} title="Upvote - This issue affects me too">
+                    <ArrowUp size={14} /> <span style={{ fontWeight: 600, fontSize: "0.8rem" }}>{report.upvotes || 0}</span>
                   </button>
-                  <button style={voteBtn} title="Downvote">
-                    <ArrowDown size={14} />
+                  <button onClick={() => handleVote(report.id, "DOWNVOTE")} style={voteBtn} title="Downvote">
+                    <ArrowDown size={14} /> <span style={{ fontWeight: 600, fontSize: "0.8rem" }}>{report.downvotes || 0}</span>
                   </button>
                 </div>
-                <button style={{ fontSize: "0.75rem", fontWeight: 700, color: "#59623c", background: "transparent", border: "none", cursor: "pointer", textDecoration: "underline" }}>
-                  Mark as Still Existing
+                <button onClick={() => handleVerify(report.id)} style={{ fontSize: "0.75rem", fontWeight: 700, color: "#59623c", background: "transparent", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                  Mark as Still Existing ({report.verifiedCount || 0})
                 </button>
               </div>
             </div>
