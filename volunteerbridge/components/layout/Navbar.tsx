@@ -1,8 +1,33 @@
 "use client";
 
-import { Bell, Settings } from "lucide-react";
+import { Bell, Settings, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getCookie } from "@/lib/utils/cookies";
+import { apiClient } from "@/lib/api/client";
 
 export default function Navbar() {
+  const [userName, setUserName] = useState("Admin User");
+  const [initials, setInitials] = useState("AU");
+
+  useEffect(() => {
+    const role = getCookie("vb_role");
+    if (role === "ngo") {
+      const ngoId = getCookie("vb_ngo_id");
+      if (ngoId) {
+        apiClient.getNgo(ngoId).then(ngo => {
+          if (ngo) {
+            const name = ngo.ngoName || ngo.name || "NGO User";
+            setUserName(name);
+            setInitials(name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2));
+          }
+        });
+      }
+    } else if (role === "admin") {
+      setUserName("Admin Portal");
+      setInitials("AP");
+    }
+  }, []);
+
   return (
     <header
       style={{
@@ -121,7 +146,7 @@ export default function Navbar() {
           }}
         >
           <span style={{ fontSize: "0.875rem", fontWeight: 700, color: "#1c1c18", fontFamily: "'Public Sans', sans-serif", whiteSpace: "nowrap" }}>
-            Admin User
+            {userName}
           </span>
           <div
             style={{
@@ -140,7 +165,7 @@ export default function Navbar() {
               flexShrink: 0,
             }}
           >
-            AU
+            {initials}
           </div>
         </div>
       </div>

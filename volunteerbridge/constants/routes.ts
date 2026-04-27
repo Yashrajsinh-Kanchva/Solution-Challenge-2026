@@ -64,3 +64,46 @@ export const ADMIN_ROUTES: NavigationRoute[] = [
 		description: "Heatmap and presence map views",
 	},
 ];
+
+export const NGO_ROUTES: NavigationRoute[] = [
+	{
+		label: "Dashboard",
+		href: "/ngo/dashboard",
+		description: "NGO overview and stats",
+	},
+	{
+		label: "Requests",
+		href: "/ngo/tasks",
+		description: "New requests assigned to you",
+	},
+	{
+		label: "Active Tasks",
+		href: "/ngo/active-tasks",
+		description: "Track tasks in progress",
+	},
+	{
+		label: "Task Map",
+		href: "/ngo/map",
+		description: "View tasks on the map",
+	},
+	{
+		label: "Volunteers",
+		href: "/ngo/volunteers",
+		description: "Manage your volunteers",
+	},
+	{
+		label: "Volunteer Requests",
+		href: "/ngo/volunteer-requests",
+		description: "Review and approve new volunteers",
+	},
+	{
+		label: "Resources",
+		href: "/ngo/resources",
+		description: "Track inventory and supplies",
+	},
+	{
+		label: "Surveys",
+		href: "/ngo/surveys",
+		description: "Paper surveys and field reports",
+	},
+];
