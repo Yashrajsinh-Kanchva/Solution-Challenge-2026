@@ -184,8 +184,8 @@ export default function NgoTasks() {
                                 <p className="text-[9px] font-black text-secondary/40 uppercase tracking-widest">Assigned Team</p>
                                 <div className="flex -space-x-2">
                                   {req.assignedVolunteers.map((vol: any) => (
-                                    <div key={vol.volunteerId} title={vol.name} className="w-9 h-9 rounded-full bg-primary/10 border-2 border-white flex items-center justify-center text-[11px] font-black text-primary custom-shadow relative group/avatar">
-                                      {vol.name[0]}
+                                    <div key={vol.volunteerId} title={vol.name ?? "Volunteer"} className="w-9 h-9 rounded-full bg-primary/10 border-2 border-white flex items-center justify-center text-[11px] font-black text-primary custom-shadow relative group/avatar">
+                                      {vol.name?.[0] ?? "?"}
                                       <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
                                     </div>
                                   ))}
@@ -352,7 +352,7 @@ export default function NgoTasks() {
                             <div>
                               <div className="flex justify-between items-start mb-6">
                                 <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary font-black text-2xl shadow-sm border border-primary/20">
-                                  {vol.name[0]}
+                                  {vol.name?.[0] ?? "?"}
                                 </div>
                                 <div className="flex flex-col items-end">
                                   <span className="text-[10px] font-black text-primary uppercase tracking-tighter bg-primary/10 px-3 py-1 rounded-full border border-primary/20 shadow-sm">
@@ -366,14 +366,14 @@ export default function NgoTasks() {
                                 </div>
                               </div>
                               
-                              <h5 className="text-lg font-black text-on-surface mb-1">{vol.name}</h5>
+                              <h5 className="text-lg font-black text-on-surface mb-1">{vol.name ?? "Unknown Volunteer"}</h5>
                               <div className="flex items-center gap-1.5 text-xs font-bold text-secondary/60 mb-6">
                                 <Navigation size={14} className="text-primary" />
-                                {vol.location.address}
+                                {vol.location?.address ?? "Location unavailable"}
                               </div>
 
                               <div className="flex flex-wrap gap-2 mb-8">
-                                {vol.skills.map((skill: string, i: number) => (
+                                {(vol.skills ?? []).map((skill: string, i: number) => (
                                   <span key={i} className="text-[9px] font-black px-2.5 py-1.5 bg-surface-variant text-on-surface-variant rounded-lg uppercase tracking-widest border border-outline/40">
                                     {skill}
                                   </span>
