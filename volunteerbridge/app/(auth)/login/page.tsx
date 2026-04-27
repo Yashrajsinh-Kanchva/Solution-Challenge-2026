@@ -3,7 +3,7 @@
 import { FormEvent, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AppRole, ROLES } from "@/constants/roles";
-import { Loader2, User, ChevronRight, CheckCircle2, ShieldCheck, Plus, ArrowRight, Zap } from "lucide-react";
+import { Loader2, User, ChevronRight, CheckCircle2, ShieldCheck, Plus, Zap } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 
 type CitizenSlim = { id: string; name: string; area: string; status: string };
@@ -21,7 +21,7 @@ export default function LoginPage() {
   const router = useRouter();
 
   // Shared
-  const [role,          setRole]          = useState<AppRole>(ROLES.ADMIN);
+  const [role, setRole] = useState<AppRole>(ROLES.ADMIN);
 
   // Citizen
   const [citizens,      setCitizens]      = useState<CitizenSlim[]>([]);
@@ -30,15 +30,19 @@ export default function LoginPage() {
   const [loadingSubmit, setLoadingSubmit] = useState(false);
   const [citizenError,  setCitizenError]  = useState("");
 
-  // NGO / Volunteer
-  const [selectedNgoId,      setSelectedNgoId]      = useState<string>("");
-  const [ngos,               setNgos]               = useState<any[]>([]);
-  const [showRegistration,   setShowRegistration]   = useState(false);
-  const [showVolunteerJoin,  setShowVolunteerJoin]  = useState(false);
-  const [submitting,         setSubmitting]         = useState(false);
+  // NGO / Volunteer (from mihir/ngo branch)
+  const [selectedNgoId,     setSelectedNgoId]     = useState<string>("");
+  const [ngos,              setNgos]              = useState<any[]>([]);
+  const [showRegistration,  setShowRegistration]  = useState(false);
+  const [showVolunteerJoin, setShowVolunteerJoin] = useState(false);
+  const [submitting,        setSubmitting]        = useState(false);
 
-  const [ngoForm, setNgoForm] = useState({ ngoName: "", contactName: "", email: "", phone: "", mission: "", area: "" });
-  const [volunteerForm, setVolunteerForm] = useState({ name: "", skills: "", location: "", phone: "", email: "", ngoId: "", volunteerId: "" });
+  const [ngoForm, setNgoForm] = useState({
+    ngoName: "", contactName: "", email: "", phone: "", mission: "", area: "",
+  });
+  const [volunteerForm, setVolunteerForm] = useState({
+    name: "", skills: "", location: "", phone: "", email: "", ngoId: "", volunteerId: "",
+  });
 
   /* ── Fetch citizens when Citizen role selected ── */
   useEffect(() => {
@@ -57,7 +61,7 @@ export default function LoginPage() {
 
   /* ── Fetch NGOs when NGO/Volunteer role selected ── */
   const fetchNgos = () => {
-    apiClient.getNgos().then(data => {
+    apiClient.getNgos().then((data: any[]) => {
       if (data && data.length > 0) {
         const filtered = data.filter((n: any) => n.status !== "rejected");
         setNgos(filtered);
@@ -77,8 +81,9 @@ export default function LoginPage() {
   /* ── Submit ── */
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (role === ROLES.CITIZEN && !citizenId) { setCitizenError("Please select a citizen."); return; }
-
+    if (role === ROLES.CITIZEN && !citizenId) {
+      setCitizenError("Please select a citizen."); return;
+    }
     const selected = ngos.find(n => (n.ngoId || n.id) === selectedNgoId);
     if (role === ROLES.NGO && selected?.status === "pending") {
       alert("This NGO registration is still pending approval."); return;
@@ -89,8 +94,7 @@ export default function LoginPage() {
     if (role === ROLES.CITIZEN)   document.cookie = `vb_citizen_id=${citizenId}; path=/`;
     if (role === ROLES.NGO)       document.cookie = `vb_ngo_id=${selectedNgoId}; path=/`;
     if (role === ROLES.VOLUNTEER) {
-      const volId = volunteerForm.volunteerId || "vol-101";
-      document.cookie = `vb_volunteer_id=${volId}; path=/`;
+      document.cookie = `vb_volunteer_id=${volunteerForm.volunteerId || "vol-101"}; path=/`;
     }
 
     const destinations: Record<AppRole, string> = {
@@ -108,7 +112,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await apiClient.registerNgo(ngoForm);
-      alert("NGO registration request submitted! It will appear in the list as (Requested) until approved.");
+      alert("NGO registration submitted! It will appear as (Under Review) until approved.");
       setShowRegistration(false);
       fetchNgos();
     } catch { alert("Failed to submit registration."); }
@@ -120,7 +124,11 @@ export default function LoginPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const payload = { ...volunteerForm, volunteerId: `vol-${Date.now()}`, skills: volunteerForm.skills.split(",").map(s => s.trim()) };
+      const payload = {
+        ...volunteerForm,
+        volunteerId: `vol-${Date.now()}`,
+        skills: volunteerForm.skills.split(",").map(s => s.trim()),
+      };
       await apiClient.submitVolunteerJoinRequest(volunteerForm.ngoId, payload);
       alert("Join request sent! The NGO will review your application.");
       setShowVolunteerJoin(false);
@@ -168,9 +176,9 @@ export default function LoginPage() {
           </div>
           <div className="flex gap-4 pt-6 border-t border-outline/30 mt-8">
             <button type="submit" disabled={submitting} className="flex-1 py-4 bg-primary text-white rounded-button font-black text-xs uppercase tracking-widest hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 active:scale-95 disabled:opacity-50">
-              {submitting ? "Processing Application..." : "Submit Application"}
+              {submitting ? "Processing..." : "Submit Application"}
             </button>
-            <button type="button" className="flex-1 py-4 border-2 border-outline/60 text-secondary font-black text-xs uppercase tracking-widest rounded-button hover:bg-surface-variant/20 transition-all active:scale-95" onClick={() => setShowRegistration(false)}>
+            <button type="button" onClick={() => setShowRegistration(false)} className="flex-1 py-4 border-2 border-outline/60 text-secondary font-black text-xs uppercase tracking-widest rounded-button hover:bg-surface-variant/20 transition-all active:scale-95">
               Return to Login
             </button>
           </div>
@@ -214,14 +222,14 @@ export default function LoginPage() {
           <div className="space-y-2">
             <label className="text-[10px] font-black text-on-surface uppercase tracking-widest ml-1">Select Organization</label>
             <select required value={volunteerForm.ngoId} onChange={e => setVolunteerForm({...volunteerForm, ngoId: e.target.value})} className="w-full px-5 py-4 bg-surface-variant/20 border-2 border-outline/60 rounded-2xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-inner appearance-none cursor-pointer">
-              {ngos.map(ngo => (<option key={ngo.ngoId || ngo.id} value={ngo.ngoId || ngo.id}>{ngo.ngoName || ngo.name}</option>))}
+              {ngos.map(ngo => <option key={ngo.ngoId || ngo.id} value={ngo.ngoId || ngo.id}>{ngo.ngoName || ngo.name}</option>)}
             </select>
           </div>
           <div className="flex gap-4 pt-6 border-t border-outline/30 mt-8">
             <button type="submit" disabled={submitting} className="flex-1 py-4 bg-primary text-white rounded-button font-black text-xs uppercase tracking-widest hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 active:scale-95 disabled:opacity-50">
-              {submitting ? "Sending Request..." : "Send Join Request"}
+              {submitting ? "Sending..." : "Send Join Request"}
             </button>
-            <button type="button" className="flex-1 py-4 border-2 border-outline/60 text-secondary font-black text-xs uppercase tracking-widest rounded-button hover:bg-surface-variant/20 transition-all active:scale-95" onClick={() => setShowVolunteerJoin(false)}>
+            <button type="button" onClick={() => setShowVolunteerJoin(false)} className="flex-1 py-4 border-2 border-outline/60 text-secondary font-black text-xs uppercase tracking-widest rounded-button hover:bg-surface-variant/20 transition-all active:scale-95">
               Cancel
             </button>
           </div>
@@ -230,7 +238,7 @@ export default function LoginPage() {
     );
   }
 
-  /* ── Main Login ── */
+  /* ── Main Login Screen ── */
   return (
     <div style={shell}>
       <div style={card}>
@@ -243,7 +251,7 @@ export default function LoginPage() {
 
         <form onSubmit={onSubmit} style={{ display: "grid", gap: "1.25rem" }}>
 
-          {/* Role picker */}
+          {/* Role picker grid */}
           <div>
             <label style={labelStyle}>Role</label>
             <div style={roleGrid}>
@@ -262,7 +270,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Citizen picker */}
+          {/* Citizen — Firebase picker */}
           {role === ROLES.CITIZEN && (
             <div style={{ animation: "fadeUp 0.25s ease both" }}>
               <label style={labelStyle}>
@@ -284,15 +292,15 @@ export default function LoginPage() {
                 </select>
               )}
               {citizenId && !loadingList && (() => {
-                const selected = citizens.find(c => c.id === citizenId);
-                return selected ? (
+                const sel = citizens.find(c => c.id === citizenId);
+                return sel ? (
                   <div style={previewChip}>
                     <User size={14} />
-                    <strong>{selected.name}</strong>
+                    <strong>{sel.name}</strong>
                     <span style={{ color: "#6b7466" }}>·</span>
-                    <span>{selected.area}</span>
-                    <span style={{ marginLeft: "auto", fontSize: "0.7rem", fontWeight: 700, color: selected.status === "active" ? "#2e7d32" : "#b45309" }}>
-                      {selected.status.toUpperCase()}
+                    <span>{sel.area}</span>
+                    <span style={{ marginLeft: "auto", fontSize: "0.7rem", fontWeight: 700, color: sel.status === "active" ? "#2e7d32" : "#b45309" }}>
+                      {sel.status.toUpperCase()}
                     </span>
                   </div>
                 ) : null;
@@ -301,7 +309,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* NGO picker */}
+          {/* NGO — select existing or register new */}
           {role === ROLES.NGO && (
             <div className="space-y-3 animate-in slide-in-from-top duration-500">
               <div className="flex justify-between items-center px-1">
@@ -313,13 +321,17 @@ export default function LoginPage() {
               <select id="ngoId" value={selectedNgoId} onChange={e => setSelectedNgoId(e.target.value)} className="w-full px-5 py-4 bg-surface-variant/20 border-2 border-outline/60 rounded-2xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-inner appearance-none cursor-pointer">
                 {ngos.map(ngo => {
                   const isPending = ngo.status === "pending";
-                  return (<option key={ngo.ngoId || ngo.id} value={ngo.ngoId || ngo.id} disabled={isPending}>{ngo.ngoName || ngo.name} {isPending ? "(Under Review)" : ""}</option>);
+                  return (
+                    <option key={ngo.ngoId || ngo.id} value={ngo.ngoId || ngo.id} disabled={isPending}>
+                      {ngo.ngoName || ngo.name}{isPending ? " (Under Review)" : ""}
+                    </option>
+                  );
                 })}
               </select>
             </div>
           )}
 
-          {/* Volunteer picker */}
+          {/* Volunteer — enter ID or request to join */}
           {role === ROLES.VOLUNTEER && (
             <div className="space-y-3 animate-in slide-in-from-top duration-500">
               <div className="space-y-2">
@@ -354,15 +366,15 @@ export default function LoginPage() {
 }
 
 /* ── Styles ── */
-const shell: React.CSSProperties = { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#FCF9F3", padding: "1rem" };
-const card: React.CSSProperties = { background: "#fff", border: "2px solid #ccd6a6", borderRadius: "20px", padding: "2.5rem 2rem", width: "min(500px, 100%)", boxShadow: "0 18px 40px -20px rgba(89,98,60,0.2)" };
-const logoBox: React.CSSProperties = { width: "52px", height: "52px", borderRadius: "16px", background: "#59623c", display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: "0.75rem", boxShadow: "0 12px 24px -16px rgba(89,98,60,0.45)" };
-const heading: React.CSSProperties = { fontSize: "1.5rem", fontWeight: 900, color: "#1c1c18", letterSpacing: "-0.025em", margin: "0 0 0.35rem" };
-const subtext: React.CSSProperties = { color: "#46483e", fontSize: "0.875rem" };
-const labelStyle: React.CSSProperties = { display: "block", fontWeight: 700, fontSize: "0.82rem", color: "#1c1c18", marginBottom: "0.6rem" };
-const roleGrid: React.CSSProperties = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" };
-const roleBtn: React.CSSProperties = { border: "2px solid", borderRadius: "10px", padding: "0.65rem 0.9rem", fontSize: "0.85rem", cursor: "pointer", transition: "all 0.18s", display: "flex", alignItems: "center", gap: "0.4rem", fontFamily: "'Public Sans', sans-serif" };
-const selectStyle: React.CSSProperties = { width: "100%", border: "2px solid #ccd6a6", borderRadius: "10px", padding: "0.75rem 1rem", fontSize: "0.875rem", color: "#1c1c18", background: "#fff", outline: "none", fontFamily: "'Public Sans', sans-serif", cursor: "pointer" };
-const previewChip: React.CSSProperties = { marginTop: "0.6rem", display: "flex", alignItems: "center", gap: "0.5rem", background: "#f6f3ed", border: "1px solid #ccd6a6", borderRadius: "10px", padding: "0.6rem 0.9rem", fontSize: "0.82rem", color: "#1c1c18" };
-const loadingBox: React.CSSProperties = { display: "flex", alignItems: "center", gap: "0.5rem", color: "#6b7466", fontSize: "0.85rem", padding: "0.75rem", background: "#f6f3ed", borderRadius: "10px", border: "1px solid #ccd6a6" };
-const submitBtn: React.CSSProperties = { width: "100%", padding: "0.9rem", background: "#59623c", color: "#fff", border: "none", borderRadius: "12px", fontWeight: 800, fontSize: "0.95rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", cursor: "pointer", fontFamily: "'Public Sans', sans-serif", boxShadow: "0 16px 32px -18px rgba(89,98,60,0.5)", transition: "all 0.2s" };
+const shell: React.CSSProperties        = { minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"#FCF9F3", padding:"1rem" };
+const card: React.CSSProperties         = { background:"#fff", border:"2px solid #ccd6a6", borderRadius:"20px", padding:"2.5rem 2rem", width:"min(500px,100%)", boxShadow:"0 18px 40px -20px rgba(89,98,60,0.2)" };
+const logoBox: React.CSSProperties      = { width:"52px", height:"52px", borderRadius:"16px", background:"#59623c", display:"inline-flex", alignItems:"center", justifyContent:"center", marginBottom:"0.75rem", boxShadow:"0 12px 24px -16px rgba(89,98,60,0.45)" };
+const heading: React.CSSProperties      = { fontSize:"1.5rem", fontWeight:900, color:"#1c1c18", letterSpacing:"-0.025em", margin:"0 0 0.35rem" };
+const subtext: React.CSSProperties      = { color:"#46483e", fontSize:"0.875rem" };
+const labelStyle: React.CSSProperties   = { display:"block", fontWeight:700, fontSize:"0.82rem", color:"#1c1c18", marginBottom:"0.6rem" };
+const roleGrid: React.CSSProperties     = { display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.5rem" };
+const roleBtn: React.CSSProperties      = { border:"2px solid", borderRadius:"10px", padding:"0.65rem 0.9rem", fontSize:"0.85rem", cursor:"pointer", transition:"all 0.18s", display:"flex", alignItems:"center", gap:"0.4rem", fontFamily:"'Public Sans', sans-serif" };
+const selectStyle: React.CSSProperties  = { width:"100%", border:"2px solid #ccd6a6", borderRadius:"10px", padding:"0.75rem 1rem", fontSize:"0.875rem", color:"#1c1c18", background:"#fff", outline:"none", fontFamily:"'Public Sans', sans-serif", cursor:"pointer" };
+const previewChip: React.CSSProperties  = { marginTop:"0.6rem", display:"flex", alignItems:"center", gap:"0.5rem", background:"#f6f3ed", border:"1px solid #ccd6a6", borderRadius:"10px", padding:"0.6rem 0.9rem", fontSize:"0.82rem", color:"#1c1c18" };
+const loadingBox: React.CSSProperties   = { display:"flex", alignItems:"center", gap:"0.5rem", color:"#6b7466", fontSize:"0.85rem", padding:"0.75rem", background:"#f6f3ed", borderRadius:"10px", border:"1px solid #ccd6a6" };
+const submitBtn: React.CSSProperties    = { width:"100%", padding:"0.9rem", background:"#59623c", color:"#fff", border:"none", borderRadius:"12px", fontWeight:800, fontSize:"0.95rem", display:"flex", alignItems:"center", justifyContent:"center", gap:"0.5rem", cursor:"pointer", fontFamily:"'Public Sans', sans-serif", boxShadow:"0 16px 32px -18px rgba(89,98,60,0.5)", transition:"all 0.2s" };
