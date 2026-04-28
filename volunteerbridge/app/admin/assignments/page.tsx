@@ -7,6 +7,7 @@ import { apiClient } from "@/lib/api/client";
 import {
   Plus, X, Search, RefreshCw, Download,
   Building2, MapPin, Users, CheckCircle,
+  LayoutGrid, AlertCircle, Map, ExternalLink
 } from "lucide-react";
 
 export default function AssignmentsPage() {
@@ -39,7 +40,6 @@ export default function AssignmentsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Derived stats
   const stats = useMemo(() => {
     const uniqueNgos   = new Set(assignments.map((a: any) => a.ngoName)).size;
     const uniqueAreas  = new Set(assignments.map((a: any) => a.campus)).size;
@@ -49,7 +49,6 @@ export default function AssignmentsPage() {
     return { total: assignments.length, uniqueNgos, uniqueAreas, uncovered };
   }, [assignments]);
 
-  // Filtered list
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return assignments.filter((a: any) => {
@@ -61,7 +60,6 @@ export default function AssignmentsPage() {
     });
   }, [assignments, search, campusF]);
 
-  // Coverage summary per area
   const areaCoverage = useMemo(() =>
     areaOptions.map(area => ({
       area,
@@ -96,197 +94,176 @@ export default function AssignmentsPage() {
       ...filtered.map((a: any) => [a.id, a.ngoName, a.campus, a.coordinator, a.assignedAt]),
     ];
     const blob = new Blob([rows.map(r => r.join(",")).join("\n")], { type:"text/csv" });
-    const el = Object.assign(document.createElement("a"), {
-      href: URL.createObjectURL(blob), download:"assignments.csv",
-    });
-    el.click(); URL.revokeObjectURL(el.href);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "assignments.csv"; a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="page-stack">
-
-      {/* ── Header ── */}
-      <section className="page-header">
-        <div>
-          <p className="page-header__eyebrow">Feature 7</p>
-          <h2>NGO Assignment Management</h2>
-          <p>Assign approved NGOs to campuses, manage coordinators, and track area coverage.</p>
+    <div className="page-stack max-w-[1440px] mx-auto">
+      {/* Header */}
+      <section className="flex flex-col xl:flex-row justify-between items-center gap-8 mb-12">
+        <div className="max-w-3xl w-full">
+          <h1 className="text-3xl sm:text-4xl font-black text-[#1A1C15] tracking-tight leading-[1.1] mb-3">
+            NGO Assignment Management
+          </h1>
+          <p className="text-base sm:text-lg font-medium text-[#6B7160] leading-relaxed">
+            Assign approved NGOs to campuses, manage coordinators, and track area coverage.
+          </p>
         </div>
-        <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap", alignItems:"center" }}>
-          <button className="ghost-button" onClick={onExport}
-            style={{ display:"flex", alignItems:"center", gap:"0.4rem" }}>
-            <Download size={14} /> Export CSV
+        
+        <div className="flex flex-wrap gap-3 w-full xl:w-auto">
+          <button onClick={onExport} className="flex-1 xl:flex-none px-6 py-4 bg-white border-2 border-[#E8EDD0] text-[#4D5A2C] font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#F7F5EE] transition-all flex items-center justify-center gap-2 shadow-sm">
+            <Download size={16} strokeWidth={2.5} /> Export CSV
           </button>
-          <button className="primary-button" onClick={() => setShowForm(v => !v)}
-            style={{ display:"flex", alignItems:"center", gap:"0.4rem" }}>
-            {showForm ? <X size={14} /> : <Plus size={14} />}
-            {showForm ? "Cancel" : "New Assignment"}
+          <button onClick={() => setShowForm(!showForm)} className={`flex-1 xl:flex-none px-8 py-4 font-black text-[11px] uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-2 shadow-sm ${showForm ? "bg-[#BA1A1A] text-white hover:bg-[#93000A]" : "bg-[#4D5A2C] text-white hover:bg-[#647A39]"}`}>
+            {showForm ? <X size={18} strokeWidth={2.5} /> : <Plus size={18} strokeWidth={2.5} />}
+            {showForm ? "Close Form" : "New Assignment"}
           </button>
         </div>
       </section>
 
-      {/* ── KPI Strip ── */}
-      <div className="metric-grid">
+      {/* KPI Grid */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {[
-          { label:"Total Assignments",  val:stats.total,      Icon:CheckCircle, color:"#59623c" },
-          { label:"NGOs Assigned",      val:stats.uniqueNgos, Icon:Building2,   color:"#2e7d32" },
-          { label:"Areas Covered",      val:stats.uniqueAreas,Icon:MapPin,      color:"#b45309" },
-          { label:"Uncovered Areas",    val:stats.uncovered,  Icon:Users,       color:"#ba1a1a" },
-        ].map(({ label, val, Icon, color }) => (
-          <div key={label} className="metric-card">
-            <div className="metric-card__meta">
-              <p>{label}</p>
-              <h3>{val}</h3>
-              <span>{label === "Uncovered Areas" ? "of " + areaOptions.length + " total" : "active"}</span>
+          { label: "Active Pool", val: stats.total, Icon: CheckCircle, color: "text-[#4D5A2C]", bg: "bg-[#EEF3D2]" },
+          { label: "Organizations", val: stats.uniqueNgos, Icon: Building2, color: "text-[#166534]", bg: "bg-[#DCFCE7]" },
+          { label: "Areas Covered", val: stats.uniqueAreas, Icon: MapPin, color: "text-[#B45309]", bg: "bg-[#FEF3C7]" },
+          { label: "Uncovered", val: stats.uncovered, Icon: Users, color: "text-[#991B1B]", bg: "bg-[#FEE2E2]" },
+        ].map((item) => (
+          <div key={item.label} className="bg-white p-7 rounded-[32px] border-2 border-transparent hover:border-[#E8EDD0] shadow-sm flex flex-col gap-5 transition-all hover:translate-y-[-4px]">
+            <div className={`w-12 h-12 ${item.bg} ${item.color} rounded-2xl flex items-center justify-center`}>
+              <item.Icon size={24} strokeWidth={2.5} />
             </div>
-            <div className="metric-card__icon" style={{ background: color + "18", color }}>
-              <Icon size={20} strokeWidth={2} />
+            <div>
+              <p className="text-[12px] font-black text-[#4D5A2C] uppercase tracking-wider mb-1">{item.label}</p>
+              <h3 className="text-4xl font-black text-[#1A1C15]">{item.val}</h3>
             </div>
           </div>
         ))}
-      </div>
+      </section>
 
-      {/* ── Create Form ── */}
+      {/* Form Overlay */}
       {showForm && (
-        <section className="tool-surface" style={{ border:"2px solid #ccd6a6" }}>
-          <div className="surface-header">
-            <div className="section-copy">
-              <p className="section-kicker">Create Assignment</p>
-              <h3>Assign an approved NGO to a campus area</h3>
+        <section className="mb-12 bg-white border-2 border-[#4D5A2C] rounded-[40px] p-8 sm:p-12 shadow-xl animate-in zoom-in-95 duration-300">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 bg-[#EEF3D2] text-[#4D5A2C] rounded-xl flex items-center justify-center">
+              <Plus size={20} strokeWidth={2.5} />
+            </div>
+            <div>
+              <h3 className="text-2xl font-black text-[#1A1C15] tracking-tight">New Assignment</h3>
+              <p className="text-xs font-bold text-[#6B7160] uppercase tracking-widest">Connect NGO to Campus</p>
             </div>
           </div>
 
           {approvedNgos.length === 0 ? (
-            <div style={{ padding:"1rem", background:"#fffbeb", border:"1px solid #fde68a", borderRadius:8, fontSize:"0.875rem", color:"#b45309" }}>
-              ⚠ No approved NGOs available. Go to{" "}
-              <a href="/admin/ngo-approvals" style={{ color:"#59623c", fontWeight:700, textDecoration:"underline" }}>
-                NGO Approvals
-              </a>{" "}
-              to approve NGOs first.
+            <div className="p-6 bg-amber-50 border-2 border-amber-200 rounded-[24px] text-amber-800 flex items-start gap-4">
+              <AlertCircle size={24} className="flex-shrink-0" />
+              <div>
+                <p className="text-sm font-black uppercase tracking-wider mb-1">No Approved NGOs Found</p>
+                <p className="text-sm font-medium mb-3">You must approve an NGO registration before you can assign them to a campus area.</p>
+                <a href="/admin/ngo-approvals" className="inline-flex items-center gap-2 text-xs font-black text-[#4D5A2C] uppercase tracking-widest hover:underline">
+                  Go to Approvals <ExternalLink size={12} />
+                </a>
+              </div>
             </div>
           ) : (
-            <form onSubmit={onSubmit} style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr auto", gap:"0.75rem", alignItems:"end" }}>
-              <div>
-                <label style={{ fontSize:"0.72rem", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"#6b7466", display:"block", marginBottom:"0.35rem" }}>
-                  NGO
-                </label>
-                <select className="text-input" style={{ margin:0 }} value={ngoName}
-                  onChange={e => setNgoName(e.target.value)} required>
+            <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" onSubmit={onSubmit}>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-[#6B7160] uppercase tracking-widest ml-1">NGO / Organization</label>
+                <select className="w-full p-4 bg-[#F7F5EE] border-2 border-transparent focus:border-[#4D5A2C] rounded-2xl text-sm font-bold outline-none transition-all appearance-none" value={ngoName} onChange={e => setNgoName(e.target.value)} required>
                   <option value="" disabled>Select NGO</option>
                   {approvedNgos.map(o => <option key={o}>{o}</option>)}
                 </select>
               </div>
-              <div>
-                <label style={{ fontSize:"0.72rem", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"#6b7466", display:"block", marginBottom:"0.35rem" }}>
-                  Campus / Area
-                </label>
-                <select className="text-input" style={{ margin:0 }} value={campus}
-                  onChange={e => setCampus(e.target.value)}>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-[#6B7160] uppercase tracking-widest ml-1">Campus / Area</label>
+                <select className="w-full p-4 bg-[#F7F5EE] border-2 border-transparent focus:border-[#4D5A2C] rounded-2xl text-sm font-bold outline-none transition-all appearance-none" value={campus} onChange={e => setCampus(e.target.value)}>
                   {areaOptions.map(o => <option key={o}>{o}</option>)}
                 </select>
               </div>
-              <div>
-                <label style={{ fontSize:"0.72rem", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"#6b7466", display:"block", marginBottom:"0.35rem" }}>
-                  Coordinator
-                </label>
-                <input className="text-input" style={{ margin:0 }} placeholder="Coordinator name"
-                  value={coordinator} onChange={e => setCoordinator(e.target.value)} required />
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-[#6B7160] uppercase tracking-widest ml-1">Internal Coordinator</label>
+                <input className="w-full p-4 bg-[#F7F5EE] border-2 border-transparent focus:border-[#4D5A2C] rounded-2xl text-sm font-bold outline-none transition-all" placeholder="Enter name" value={coordinator} onChange={e => setCoordinator(e.target.value)} required />
               </div>
-              <button type="submit" className="primary-button" disabled={submitting}
-                style={{ whiteSpace:"nowrap", height:"2.75rem" }}>
-                {submitting ? "Assigning…" : "Assign NGO"}
-              </button>
+              <div className="flex gap-4 md:col-span-2 lg:col-span-3 pt-4">
+                <button type="submit" disabled={submitting} className="px-10 py-4 bg-[#4D5A2C] text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-[#647A39] transition-all disabled:opacity-50 shadow-lg">
+                  {submitting ? "Processing..." : "Confirm Assignment"}
+                </button>
+              </div>
             </form>
           )}
         </section>
       )}
 
-      {/* ── Area Coverage Map ── */}
-      <section className="tool-surface">
-        <div className="surface-header">
-          <div className="section-copy">
-            <p className="section-kicker">Coverage Overview</p>
-            <h3>NGO presence by area</h3>
+      {/* Coverage Grid */}
+      <section className="bg-white border-2 border-[#E8EDD0] rounded-[40px] p-8 sm:p-12 mb-12 shadow-sm">
+        <div className="flex items-center gap-3 mb-10">
+          <div className="w-10 h-10 bg-[#EEF3D2] text-[#4D5A2C] rounded-xl flex items-center justify-center">
+            <Map size={20} strokeWidth={2.5} />
+          </div>
+          <div>
+            <h3 className="text-2xl font-black text-[#1A1C15] tracking-tight">Area Coverage Map</h3>
+            <p className="text-[10px] font-black text-[#6B7160] uppercase tracking-widest">Global NGO presence tracking</p>
           </div>
         </div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(180px, 1fr))", gap:"0.75rem" }}>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {areaCoverage.map(({ area, ngos }) => (
-            <div key={area} onClick={() => setCampusF(campusF === area ? "all" : area)}
-              style={{
-                padding:"0.85rem 1rem",
-                borderRadius:12,
-                border: `2px solid ${ngos.length > 0 ? "#ccd6a6" : "#fecaca"}`,
-                background: ngos.length > 0 ? (campusF === area ? "#dce4b8" : "#f6f9ee") : "#fff8f8",
-                cursor:"pointer",
-                transition:"all 0.15s",
-              }}
-            >
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"0.4rem" }}>
-                <span style={{ fontSize:"0.7rem", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"#6b7466" }}>
+            <div key={area} onClick={() => setCampusF(campusF === area ? "all" : area)} className={`p-6 rounded-[28px] border-2 transition-all cursor-pointer ${ngos.length > 0 ? (campusF === area ? "bg-[#4D5A2C] border-[#4D5A2C]" : "bg-[#F7F5EE] border-[#E8EDD0] hover:border-[#4D5A2C]") : "bg-white border-dashed border-[#E8EDD0] opacity-60 hover:opacity-100 hover:border-[#BA1A1A]"}`}>
+              <div className="flex justify-between items-start mb-4">
+                <span className={`text-[10px] font-black uppercase tracking-widest ${campusF === area && ngos.length > 0 ? "text-white/80" : "text-[#6B7160]"}`}>
                   {area}
                 </span>
-                <span style={{
-                  fontSize:"0.65rem", fontWeight:700, padding:"0.15rem 0.5rem", borderRadius:999,
-                  background: ngos.length > 0 ? "#dce4b8" : "#fecaca",
-                  color: ngos.length > 0 ? "#59623c" : "#ba1a1a",
-                }}>
-                  {ngos.length > 0 ? `${ngos.length} NGO${ngos.length > 1 ? "s" : ""}` : "None"}
+                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase ${ngos.length > 0 ? (campusF === area ? "bg-white/20 text-white" : "bg-[#EEF3D2] text-[#4D5A2C]") : "bg-red-50 text-red-600"}`}>
+                  {ngos.length > 0 ? `${ngos.length} NGO` : "None"}
                 </span>
               </div>
               {ngos.length > 0 ? (
-                <p style={{ fontSize:"0.75rem", color:"#46483e", lineHeight:1.4 }}>
-                  {ngos.slice(0, 2).join(", ")}{ngos.length > 2 ? ` +${ngos.length - 2}` : ""}
+                <p className={`text-xs font-bold leading-relaxed line-clamp-2 ${campusF === area ? "text-white" : "text-[#1A1C15]"}`}>
+                  {ngos.join(", ")}
                 </p>
               ) : (
-                <p style={{ fontSize:"0.75rem", color:"#ba1a1a" }}>Not covered</p>
+                <p className="text-xs font-bold text-[#BA1A1A]">No active NGO</p>
               )}
             </div>
           ))}
         </div>
         {campusF !== "all" && (
-          <button className="ghost-button" onClick={() => setCampusF("all")}
-            style={{ marginTop:"0.75rem", display:"flex", alignItems:"center", gap:"0.4rem", fontSize:"0.8rem" }}>
-            <RefreshCw size={13} /> Show all areas
+          <button onClick={() => setCampusF("all")} className="mt-8 px-6 py-3 bg-[#F7F5EE] border-2 border-[#E8EDD0] text-[#4D5A2C] font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-[#EEF3D2] transition-all flex items-center gap-2 mx-auto sm:mx-0">
+            <RefreshCw size={14} /> Clear Area Filter
           </button>
         )}
       </section>
 
-      {/* ── Table Section ── */}
-      <section className="tool-surface">
-        <div className="surface-header">
-          <div className="section-copy">
-            <p className="section-kicker">Current Assignments</p>
-            <h3>Live campus coverage table</h3>
-          </div>
-          <div style={{ display:"flex", gap:"0.75rem", alignItems:"center", flexWrap:"wrap" }}>
-            {/* Search */}
-            <div style={{ position:"relative", minWidth:200 }}>
-              <Search size={13} style={{ position:"absolute", left:"0.65rem", top:"50%", transform:"translateY(-50%)", color:"#9ca3af" }} />
-              <input className="text-input" style={{ paddingLeft:"2rem", margin:0, fontSize:"0.82rem" }}
-                placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)} />
+      {/* Table Section */}
+      <section className="bg-white border-2 border-[#E8EDD0] rounded-[40px] p-8 sm:p-12 shadow-sm overflow-hidden">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-10">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <LayoutGrid size={14} className="text-[#4D5A2C]" />
+              <p className="text-[10px] font-black text-[#6B7160]/60 uppercase tracking-[0.2em]">Live Registry</p>
             </div>
-            {/* Area filter */}
-            <select className="text-input" style={{ margin:0, width:"auto", fontSize:"0.82rem" }}
-              value={campusF} onChange={e => setCampusF(e.target.value)}>
+            <h3 className="text-2xl font-black text-[#1A1C15] tracking-tight">Assignment Table</h3>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+            <div className="relative flex-1 sm:w-64">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6B7160]" />
+              <input className="w-full pl-12 pr-4 py-3 bg-[#F7F5EE] border-2 border-transparent focus:border-[#4D5A2C] rounded-xl text-sm font-bold outline-none transition-all" placeholder="Quick search..." value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+            <select className="w-full sm:w-auto p-3 bg-[#F7F5EE] border-2 border-transparent focus:border-[#4D5A2C] rounded-xl text-xs font-black uppercase tracking-widest outline-none transition-all appearance-none px-6" value={campusF} onChange={e => setCampusF(e.target.value)}>
               <option value="all">All Areas</option>
               {areaOptions.map(o => <option key={o}>{o}</option>)}
             </select>
-            {(search || campusF !== "all") && (
-              <button className="ghost-button" onClick={() => { setSearch(""); setCampusF("all"); }}
-                style={{ display:"flex", alignItems:"center", gap:"0.35rem", fontSize:"0.8rem" }}>
-                <X size={12} /> Clear
-              </button>
-            )}
-            <span style={{ fontSize:"0.8rem", color:"#6b7466", fontWeight:600, whiteSpace:"nowrap" }}>
-              {filtered.length} of {stats.total}
-            </span>
           </div>
         </div>
 
         {loading ? (
-          <div style={{ padding:"2rem", display:"flex", alignItems:"center", gap:"0.75rem", color:"#6b7466" }}>
-            <div style={{ width:18, height:18, border:"2px solid #ccd6a6", borderTopColor:"#59623c", borderRadius:"50%", animation:"spin 0.8s linear infinite" }} />
-            Loading assignments…
+          <div className="flex flex-col items-center justify-center py-32 gap-6">
+            <div className="w-12 h-12 border-4 border-[#D4DCA8] border-t-[#4D5A2C] rounded-full animate-spin" />
+            <p className="text-xs font-black text-[#6B7160] uppercase tracking-[0.3em]">Synchronizing Registry...</p>
           </div>
         ) : (
           <AssignmentTable
@@ -296,7 +273,7 @@ export default function AssignmentsPage() {
           />
         )}
       </section>
-
     </div>
   );
 }
+

@@ -263,32 +263,43 @@ export default function LoginPage() {
 
   /* ── Main Login Screen ── */
   return (
-    <div style={shell}>
-      <div style={card}>
+    <div className="min-h-screen bg-[#F7F5EE] flex items-center justify-center p-6 relative overflow-hidden">
+      {/* Decorative background elements */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#D4DCA8]/20 rounded-full blur-[120px]" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#4D5A2C]/10 rounded-full blur-[120px]" />
+
+      <div className="relative z-10 w-full max-w-[520px] bg-white border-[1.5px] border-[#D4DCA8] rounded-[32px] p-8 sm:p-12 shadow-[0_20px_50px_rgba(77,90,44,0.1)]">
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-          <div style={logoBox}><Zap size={22} color="#fff" strokeWidth={2.5} /></div>
-          <h1 style={heading}>VolunteerBridge</h1>
-          <p style={subtext}>Select your role to enter the platform</p>
+        <div className="text-center mb-8">
+          <div className="w-14 h-14 bg-[#4D5A2C] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-[0_8px_20px_rgba(77,90,44,0.35)]">
+            <Zap size={24} className="text-white" strokeWidth={2.5} />
+          </div>
+          <h1 className="text-3xl font-black text-[#1A1C15] tracking-tight mb-2">VolunteerBridge</h1>
+          <p className="text-[#6B7160] text-sm font-medium">Select your role to enter the platform</p>
         </div>
 
-        <form onSubmit={onSubmit} style={{ display: "grid", gap: "1.25rem" }}>
+        <form onSubmit={onSubmit} className="flex flex-col gap-6">
 
           {/* Role picker grid */}
-          <div>
-            <label style={labelStyle}>Role</label>
-            <div style={roleGrid}>
+          <div className="space-y-4">
+            <label className="block font-bold text-sm text-[#404535] uppercase tracking-[0.12em]">Identity Profile</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {roleOptions.map(r => (
-                <button key={r} type="button" onClick={() => setRole(r)} style={{
-                  ...roleBtn,
-                  background:  role === r ? "#EEF3D2" : "#FAFAF7",
-                  borderColor: role === r ? "#4D5A2C" : "#D4DCA8",
-                  fontWeight:  role === r ? 700 : 500,
-                  color:       role === r ? "#1A1C15" : "#6B7160",
-                  boxShadow:   role === r ? "0 0 0 3px rgba(77,90,44,0.12)" : "none",
-                }}>
-                  {ROLE_LABELS[r]}
-                  {role === r && <CheckCircle2 size={14} color="#59623c" style={{ marginLeft: "auto" }} />}
+                <button 
+                  key={r} 
+                  type="button" 
+                  onClick={() => setRole(r)} 
+                  className={`
+                    flex items-center gap-3 px-4 py-3.5 rounded-2xl border-[1.5px] transition-all text-sm font-bold
+                    ${role === r 
+                      ? "bg-[#EEF3D2] border-[#4D5A2C] text-[#1A1C15] shadow-[0_4px_12px_rgba(77,90,44,0.1)] scale-[1.02]" 
+                      : "bg-[#FAFAF7] border-[#D4DCA8] text-[#6B7160] hover:border-[#4D5A2C]/40 hover:bg-white"
+                    }
+                  `}
+                >
+                  <span className="text-base leading-none">{ROLE_LABELS[r].split(" ")[0]}</span>
+                  <span>{ROLE_LABELS[r].split(" ")[1]}</span>
+                  {role === r && <CheckCircle2 size={16} className="text-[#4D5A2C] ml-auto" />}
                 </button>
               ))}
             </div>
@@ -296,40 +307,55 @@ export default function LoginPage() {
 
           {/* Citizen — Firebase picker */}
           {role === ROLES.CITIZEN && (
-            <div style={{ animation: "fadeUp 0.25s ease both" }}>
-              <label style={labelStyle}>
-                Select Citizen
-                <span style={{ fontWeight: 400, color: "#6b7466", marginLeft: "0.4rem" }}>(fetched from Firebase)</span>
+            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+              <label className="block font-bold text-sm text-[#404535] uppercase tracking-[0.12em]">
+                Select Identity
+                <span className="font-medium normal-case text-[#6B7160]/70 ml-2 tracking-normal">(Live database)</span>
               </label>
               {loadingList ? (
-                <div style={loadingBox}>
-                  <Loader2 size={18} style={{ animation: "vb-spin 1s linear infinite" }} />
-                  Loading citizens from database…
+                <div className="flex items-center gap-3 p-4 bg-[#F7F5EE] border-[1.5px] border-[#E8EDD0] rounded-2xl text-sm font-medium text-[#6B7160]">
+                  <Loader2 size={18} className="animate-spin" />
+                  Synchronizing records…
                 </div>
               ) : (
-                <select id="citizen-select" value={citizenId} onChange={e => setCitizenId(e.target.value)} style={selectStyle}>
-                  {citizens.map((c, idx) => (
-                    <option key={c.id} value={c.id}>
-                      {idx + 1}. {c.name} — {c.area} {c.status === "pending" ? "(pending)" : ""}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative group">
+                  <select 
+                    id="citizen-select" 
+                    value={citizenId} 
+                    onChange={e => setCitizenId(e.target.value)} 
+                    className="w-full px-5 py-4 bg-[#FAFAF7] border-[1.5px] border-[#D4DCA8] rounded-2xl text-[15px] font-bold text-[#1A1C15] outline-none transition-all focus:border-[#4D5A2C] focus:bg-white focus:shadow-[0_0_0_4px_rgba(77,90,44,0.08)] appearance-none cursor-pointer"
+                  >
+                    {citizens.map((c, idx) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({c.area})
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-40">
+                    <ChevronRight size={18} className="rotate-90" />
+                  </div>
+                </div>
               )}
               {citizenId && !loadingList && (() => {
                 const sel = citizens.find(c => c.id === citizenId);
                 return sel ? (
-                  <div style={previewChip}>
-                    <User size={14} />
-                    <strong>{sel.name}</strong>
-                    <span style={{ color: "#6b7466" }}>·</span>
-                    <span>{sel.area}</span>
-                    <span style={{ marginLeft: "auto", fontSize: "0.7rem", fontWeight: 700, color: sel.status === "active" ? "#2e7d32" : "#b45309" }}>
-                      {sel.status.toUpperCase()}
-                    </span>
+                  <div className="flex items-center gap-3 bg-[#EEF3D2] border-[1.5px] border-[#D4DCA8] rounded-2xl p-4 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#4D5A2C] shadow-sm">
+                      <User size={18} />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <strong className="text-sm font-black text-[#1A1C15]">{sel.name}</strong>
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${sel.status === "active" ? "bg-[#2E6B32]/10 text-[#2E6B32]" : "bg-[#B45309]/10 text-[#B45309]"}`}>
+                          {sel.status.toUpperCase()}
+                        </span>
+                      </div>
+                      <p className="text-xs font-bold text-[#6B7160]/70">{sel.area}</p>
+                    </div>
                   </div>
                 ) : null;
               })()}
-              {citizenError && <p style={{ color: "#ba1a1a", fontSize: "0.8rem", marginTop: "0.4rem" }}>{citizenError}</p>}
+              {citizenError && <p className="text-red-600 text-xs font-bold mt-2 ml-1">{citizenError}</p>}
             </div>
           )}
 
@@ -416,19 +442,27 @@ export default function LoginPage() {
             </div>
           )}
 
-          <button id="login-submit-btn" type="submit" disabled={loadingSubmit || (role === ROLES.CITIZEN && loadingList)} style={submitBtn}>
-            {loadingSubmit
-              ? <><Loader2 size={16} style={{ animation: "vb-spin 1s linear infinite" }} /> Entering…</>
-              : <><ChevronRight size={16} /> Continue as {ROLE_LABELS[role].split(" ")[1]}</>
-            }
+          <button 
+            id="login-submit-btn" 
+            type="submit" 
+            disabled={loadingSubmit || (role === ROLES.CITIZEN && loadingList)} 
+            className="group w-full py-4.5 bg-[#4D5A2C] text-white rounded-2xl font-black text-base flex items-center justify-center gap-3 transition-all hover:bg-[#647A39] shadow-[0_8px_20px_rgba(77,90,44,0.2)] hover:shadow-[0_12px_25px_rgba(77,90,44,0.3)] active:scale-[0.98] disabled:opacity-50 mt-6"
+          >
+            {loadingSubmit ? (
+              <Loader2 size={20} className="animate-spin" />
+            ) : (
+              <>
+                <span>Enter as {ROLE_LABELS[role].split(" ")[1]}</span>
+                <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              </>
+            )}
           </button>
         </form>
 
-        <p style={{ textAlign: "center", marginTop: "1.25rem", fontSize: "0.75rem", color: "#6b7466" }}>
-          This is a simulated login for demo purposes.
+        <p className="text-center mt-10 text-[13px] font-bold text-[#5A614F] uppercase tracking-widest">
+          Simulated environment · Demo access only
         </p>
       </div>
-
       <style>{`
         @keyframes fadeUp  { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
         @keyframes vb-spin { to { transform: rotate(360deg); } }

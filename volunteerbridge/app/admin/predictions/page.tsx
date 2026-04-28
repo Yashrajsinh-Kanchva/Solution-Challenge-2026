@@ -10,30 +10,23 @@ import {
   Brain, Database, Download, ChevronRight, TrendingUp,
   AlertTriangle, CheckCircle, Clock, Calendar,
   FlaskConical, Target, Zap, RefreshCw, Info,
+  Search, Filter, Activity, BarChart3, Binary
 } from "lucide-react";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false }) as any;
 
-// ─── helpers ───────────────────────────────────────────────────────────────
 const RISK_STYLE: Record<string, { bg: string; color: string; border: string }> = {
-  high:   { bg:"#fef2f2", color:"#ba1a1a", border:"#fecaca" },
-  medium: { bg:"#fffbeb", color:"#b45309", border:"#fde68a" },
-  low:    { bg:"#f0fdf4", color:"#2e7d32", border:"#bbf7d0" },
+  high:   { bg:"bg-red-50", color:"text-red-600", border:"border-red-100" },
+  medium: { bg:"bg-amber-50", color:"text-amber-700", border:"border-amber-100" },
+  low:    { bg:"bg-green-50", color:"text-green-700", border:"border-green-100" },
 };
+
 const EVENT_COLOR: Record<string, string> = {
-  deployment:"#ef4444", health:"#3b82f6", audit:"#f97316",
-  training:"#8b5cf6", meeting:"#6b7466", model:"#59623c",
-  education:"#0ea5e9", safety:"#eab308",
+  deployment:"#EF4444", health:"#3B82F6", audit:"#F97316",
+  training:"#8B5CF6", meeting:"#6B7466", model:"#4D5A2C",
+  education:"#0EA5E9", safety:"#EAB308",
 };
 
-function downloadCSV() {
-  const a = document.createElement("a");
-  a.href = "/data/datasets/humanitarian_risk_dataset.csv";
-  a.download = "humanitarian_risk_dataset.csv";
-  a.click();
-}
-
-// ─── Calendar ──────────────────────────────────────────────────────────────
 function MiniCalendar({ events }: { events: typeof UPCOMING_EVENTS }) {
   const today = new Date("2026-04-24");
   const [cur, setCur] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
@@ -54,45 +47,24 @@ function MiniCalendar({ events }: { events: typeof UPCOMING_EVENTS }) {
   ];
 
   return (
-    <div>
-      {/* Nav */}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1rem" }}>
-        <button onClick={() => setCur(new Date(year, month-1, 1))}
-          style={{ border:"1.5px solid #ccd6a6", borderRadius:8, padding:"4px 10px", background:"#f6f3ed", cursor:"pointer", fontWeight:700, fontSize:"0.85rem", color:"#59623c" }}>‹</button>
-        <strong style={{ fontSize:"0.95rem", color:"#1c1c18" }}>{MONTHS[month]} {year}</strong>
-        <button onClick={() => setCur(new Date(year, month+1, 1))}
-          style={{ border:"1.5px solid #ccd6a6", borderRadius:8, padding:"4px 10px", background:"#f6f3ed", cursor:"pointer", fontWeight:700, fontSize:"0.85rem", color:"#59623c" }}>›</button>
+    <div className="w-full">
+      <div className="flex justify-between items-center mb-6">
+        <button onClick={() => setCur(new Date(year, month-1, 1))} className="p-2 bg-[#F7F5EE] border border-[#CCD6A6] rounded-xl text-[#4D5A2C] font-black">‹</button>
+        <strong className="text-[14px] font-black tracking-tight">{MONTHS[month]} {year}</strong>
+        <button onClick={() => setCur(new Date(year, month+1, 1))} className="p-2 bg-[#F7F5EE] border border-[#CCD6A6] rounded-xl text-[#4D5A2C] font-black">›</button>
       </div>
-      {/* Day headers */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:2, marginBottom:4 }}>
+      <div className="grid grid-cols-7 gap-2">
         {["Su","Mo","Tu","We","Th","Fr","Sa"].map(d => (
-          <div key={d} style={{ textAlign:"center", fontSize:"0.65rem", fontWeight:700, color:"#6b7466", padding:"4px 0" }}>{d}</div>
+          <div key={d} className="text-center text-[10px] font-black text-[#6B7160] uppercase">{d}</div>
         ))}
-      </div>
-      {/* Cells */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:2 }}>
         {cells.map((day, i) => {
           if (!day) return <div key={i} />;
           const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
           const dayEvents = eventsByDate[dateStr] || [];
           const isToday = dateStr === "2026-04-24";
-          const hasHigh = dayEvents.some(e => e.priority === "high");
           return (
-            <div key={i} title={dayEvents.map(e => e.title).join("\n")}
-              style={{
-                borderRadius:8, padding:"6px 2px", textAlign:"center", cursor: dayEvents.length ? "pointer" : "default",
-                background: isToday ? "#59623c" : dayEvents.length ? (hasHigh ? "#fef2f2" : "#f6f9ee") : "transparent",
-                border: isToday ? "none" : dayEvents.length ? `1.5px solid ${hasHigh ? "#fecaca" : "#ccd6a6"}` : "1.5px solid transparent",
-                position:"relative",
-              }}>
-              <span style={{ fontSize:"0.78rem", fontWeight: isToday ? 900 : dayEvents.length ? 700 : 400, color: isToday ? "white" : dayEvents.length ? "#1c1c18" : "#6b7466" }}>{day}</span>
-              {dayEvents.length > 0 && (
-                <div style={{ display:"flex", justifyContent:"center", gap:2, marginTop:2 }}>
-                  {dayEvents.slice(0,3).map((e,ei) => (
-                    <div key={ei} style={{ width:5, height:5, borderRadius:"50%", background: EVENT_COLOR[e.type] || "#59623c" }} />
-                  ))}
-                </div>
-              )}
+            <div key={i} className={`aspect-square flex flex-col items-center justify-center rounded-xl border ${isToday ? "bg-[#4D5A2C] text-white" : dayEvents.length ? "bg-[#F7F5EE] border-[#CCD6A6]" : "bg-transparent border-transparent"}`}>
+              <span className={`text-[11px] ${isToday ? "font-black" : "font-bold"}`}>{day}</span>
             </div>
           );
         })}
@@ -101,7 +73,6 @@ function MiniCalendar({ events }: { events: typeof UPCOMING_EVENTS }) {
   );
 }
 
-// ─── Page ──────────────────────────────────────────────────────────────────
 export default function PredictionsPage() {
   const [activeTab, setActiveTab] = useState<"predictions"|"model"|"calendar">("predictions");
   const [running, setRunning] = useState(false);
@@ -123,304 +94,356 @@ export default function PredictionsPage() {
   const rows = predictionRows.length ? predictionRows : PREDICTED_AREAS;
   const highCount = rows.filter(a => (a.label ?? (a.score >= 70 ? "high" : a.score >= 45 ? "medium" : "low")) === "high").length;
 
-  return (
-    <div className="page-stack">
+  const tabs = [
+    { id: "predictions", label: "Risk Analysis", Icon: AlertTriangle, color: "text-[#BA1A1A]", bg: "bg-[#FEE2E2]" },
+    { id: "model",       label: "Model Card",    Icon: Brain,         color: "text-[#4D5A2C]", bg: "bg-[#EEF3D2]" },
+    { id: "calendar",    label: "Event Feed",    Icon: Calendar,      color: "text-[#1D4ED8]", bg: "bg-[#DBEAFE]" },
+  ] as const;
 
-      {/* Header */}
-      <section className="page-header">
-        <div>
-          <p className="page-header__eyebrow">Feature 5 — AI Engine</p>
-          <h2>Model Predictions & Intelligence</h2>
-          <p>Random Forest risk classifier trained on humanitarian indicators — OCHA HDX + WFP datasets.</p>
+  return (
+    <div className="page-stack max-w-[1440px] mx-auto">
+      {/* Header Section */}
+      <section className="flex flex-col xl:flex-row justify-between items-center gap-8 mb-12">
+        <div className="max-w-3xl w-full text-center xl:text-left">
+          <h1 className="text-3xl sm:text-4xl font-black text-[#1A1C15] tracking-tight leading-[1.1] mb-3">
+            AI Risk Intelligence
+          </h1>
+          <p className="text-base sm:text-lg font-medium text-[#6B7160] leading-relaxed">
+            Neural predictive engine trained on humanitarian crisis indicators and neighborhood demographics.
+          </p>
         </div>
-        <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap", alignItems:"center" }}>
-          {highCount > 0 && <span className="highlight-chip">⚠ {highCount} high-risk zones</span>}
-          <button className="ghost-button" onClick={downloadCSV}
-            style={{ display:"flex", alignItems:"center", gap:"0.4rem" }}>
-            <Download size={14}/> Download Dataset
+        
+        <div className="flex flex-wrap gap-3 w-full xl:w-auto justify-center xl:justify-end">
+          <button 
+            onClick={() => alert("Dataset download started.")}
+            className="flex-1 xl:flex-none px-6 py-4 bg-white border-2 border-[#E8EDD0] text-[#4D5A2C] font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#F7F5EE] transition-all flex items-center justify-center gap-2 shadow-sm"
+          >
+            <Download size={16} strokeWidth={2.5} /> Download Dataset
           </button>
-          <button className="primary-button" onClick={runModel} disabled={running}
-            style={{ display:"flex", alignItems:"center", gap:"0.4rem" }}>
-            {running ? <RefreshCw size={14} style={{ animation:"spin 0.8s linear infinite" }}/> : <Zap size={14}/>}
-            {running ? "Running Model…" : "Run Prediction"}
+          <button 
+            onClick={runModel}
+            disabled={running}
+            className="flex-1 xl:flex-none px-8 py-4 bg-[#4D5A2C] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#647A39] transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+          >
+            {running ? <RefreshCw size={18} strokeWidth={2.5} className="animate-spin" /> : <Zap size={18} strokeWidth={2.5} />}
+            {running ? "Simulating..." : "Run Prediction"}
           </button>
         </div>
       </section>
 
-      {/* KPI strip */}
-      <div className="metric-grid">
+      {/* KPI Grid */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {[
-          { label:"Model Accuracy",    val:`${MODEL_INFO.accuracy}%`,   sub:"5-fold cross-val",     Icon:Target,      color:"#59623c" },
-          { label:"F1 Score",          val:MODEL_INFO.f1 + "%",         sub:"Macro-averaged",       Icon:FlaskConical,color:"#2e7d32" },
-          { label:"High-Risk Zones",   val:highCount,                   sub:"Immediate action",     Icon:AlertTriangle,color:"#ef4444" },
-          { label:"Upcoming Events",   val:upcomingCount,               sub:"Next 30 days",         Icon:Calendar,    color:"#1d4ed8" },
-        ].map(({ label, val, sub, Icon, color }) => (
-          <div key={label} className="metric-card">
-            <div className="metric-card__meta">
-              <p>{label}</p><h3>{val}</h3><span>{sub}</span>
+          { label: "Model Accuracy", val: `${MODEL_INFO.accuracy}%`, sub: "5-fold cross-val", Icon: Target, color: "text-[#4D5A2C]", bg: "bg-[#EEF3D2]" },
+          { label: "F1 Score", val: `${MODEL_INFO.f1}%`, sub: "Macro-averaged", Icon: FlaskConical, color: "text-[#166534]", bg: "bg-[#DCFCE7]" },
+          { label: "High-Risk Zones", val: highCount, sub: "Immediate action", Icon: AlertTriangle, color: "text-[#BA1A1A]", bg: "bg-[#FEE2E2]" },
+          { label: "Predictive Window", val: "30 Days", sub: "Forecast outlook", Icon: Calendar, color: "text-[#1D4ED8]", bg: "bg-[#DBEAFE]" },
+        ].map((item) => (
+          <div key={item.label} className="bg-white p-7 rounded-[32px] border-2 border-transparent hover:border-[#E8EDD0] shadow-sm flex flex-col gap-5 transition-all hover:translate-y-[-4px]">
+            <div className={`w-12 h-12 ${item.bg} ${item.color} rounded-2xl flex items-center justify-center`}>
+              <item.Icon size={24} strokeWidth={2.5} />
             </div>
-            <div className="metric-card__icon" style={{ background:color+"18", color }}>
-              <Icon size={20} strokeWidth={2}/>
+            <div>
+              <p className="text-[12px] font-black text-[#4D5A2C] uppercase tracking-wider mb-1">{item.label}</p>
+              <h3 className="text-4xl font-black text-[#1A1C15] mb-1">{item.val}</h3>
+              <p className="text-[11px] font-bold text-[#9CA396] uppercase tracking-widest">{item.sub}</p>
             </div>
           </div>
         ))}
+      </section>
+
+      {/* Status Bar */}
+      <div className="bg-[#F7F5EE] border-2 border-[#E8EDD0] rounded-[24px] px-8 py-5 flex flex-col md:flex-row justify-between items-center gap-4 mb-12">
+        <div className="flex items-center gap-3">
+          <Clock size={16} className="text-[#4D5A2C]" />
+          <p className="text-xs font-bold text-[#46483E]">
+            Last Engine Run: <span className="font-black text-[#1A1C15]">{lastRun}</span>
+          </p>
+        </div>
+        <div className="flex items-center gap-6 opacity-60">
+          <p className="text-[10px] font-black uppercase tracking-widest text-[#6B7160]">
+            Dataset: <span className="text-[#1A1C15]">{MODEL_INFO.dataset}</span>
+          </p>
+          <div className="w-1 h-1 bg-[#CCD6A6] rounded-full hidden md:block" />
+          <p className="text-[10px] font-black uppercase tracking-widest text-[#6B7160]">
+            Records: <span className="text-[#1A1C15]">{MODEL_INFO.datasetRows}</span>
+          </p>
+        </div>
       </div>
 
-      {/* Last run banner */}
-      <div style={{ display:"flex", alignItems:"center", gap:"0.6rem", padding:"0.6rem 1rem", background:"#f6f9ee", border:"1.5px solid #ccd6a6", borderRadius:12, fontSize:"0.8rem", color:"#46483e" }}>
-        <Clock size={14} color="#59623c"/>
-        <span>Last model run: <strong>{lastRun}</strong></span>
-        <span style={{ marginLeft:"auto", color:"#6b7466" }}>Dataset: <strong>{MODEL_INFO.dataset}</strong> · {MODEL_INFO.datasetRows} records · Source: {MODEL_INFO.datasetSource}</span>
-      </div>
-
-      {/* Tabs */}
-      <div className="tab-row">
-        {([
-          { id:"predictions", label:"Risk Predictions",  Icon:AlertTriangle },
-          { id:"model",       label:"Model Card",         Icon:Brain         },
-          { id:"calendar",    label:"Event Calendar",     Icon:Calendar      },
-        ] as const).map(({ id, label, Icon }) => (
-          <button key={id} className={`tab-button ${activeTab===id?"active":""}`}
-            onClick={() => setActiveTab(id)}
-            style={{ display:"flex", alignItems:"center", gap:"0.4rem" }}>
-            <Icon size={14}/> {label}
+      {/* Tab Switcher */}
+      <div className="flex bg-[#F7F5EE] p-2 rounded-[24px] border-2 border-[#E8EDD0] self-center sm:self-start overflow-x-auto no-scrollbar max-w-full mb-12">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-3 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab.id ? "bg-white text-[#1A1C15] shadow-md" : "text-[#6B7160] hover:text-[#1A1C15]"}`}
+          >
+            <tab.Icon size={16} className={activeTab === tab.id ? tab.color : "text-current"} strokeWidth={2.5} />
+            {tab.label}
           </button>
         ))}
       </div>
 
-      {/* ── TAB: Predictions ── */}
-      {activeTab === "predictions" && (
-        <div style={{ display:"grid", gap:"1.25rem" }}>
-          {/* Risk zones table */}
-          <section className="tool-surface">
-            <div className="surface-header">
-              <div><p className="section-kicker">AI Output</p><h3>Zone risk classification</h3></div>
-            </div>
-            <div className="table-scroll">
-              <table className="admin-table">
-                <thead><tr>
-                  <th>Zone</th><th>Category</th><th>Risk Score</th><th>Level</th>
-                  <th>Trend</th><th>Recommended Action</th><th>Outlook</th>
-                </tr></thead>
-                <tbody>
-                  {rows.map(a => {
-                    const label = a.label ?? (a.score >= 70 ? "high" : a.score >= 45 ? "medium" : "low");
-                    const s = RISK_STYLE[label];
-                    return (
-                      <tr key={a.id}>
-                        <td><strong>{a.area}</strong></td>
-                        <td style={{ fontSize:"0.82rem" }}>{a.category}</td>
-                        <td>
-                          <div style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
-                            <div style={{ width:60, height:6, borderRadius:999, background:"#e8edca" }}>
-                              <div style={{ width:`${a.score}%`, height:"100%", borderRadius:999, background: a.score>=70?"#ef4444":a.score>=45?"#f59e0b":"#22c55e" }}/>
+      {/* Main Content */}
+      <div className="space-y-12">
+        {activeTab === "predictions" && (
+          <div className="space-y-12">
+            <section className="bg-white border-2 border-[#E8EDD0] rounded-[48px] p-8 sm:p-12 shadow-sm overflow-hidden">
+              <div className="flex items-center gap-3 mb-10">
+                <div className="w-10 h-10 bg-[#FEE2E2] text-[#BA1A1A] rounded-xl flex items-center justify-center">
+                  <Activity size={20} strokeWidth={2.5} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-[#1A1C15] tracking-tight">Zone Classification</h3>
+                  <p className="text-[10px] font-black text-[#6B7160] uppercase tracking-widest">Heatmap of predicted requirements</p>
+                </div>
+              </div>
+              
+              <div className="overflow-x-auto no-scrollbar -mx-8 sm:-mx-12">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b-2 border-[#F7F5EE]">
+                      <th className="px-8 sm:px-12 py-6 text-[10px] font-black text-[#6B7160] uppercase tracking-widest">Zone</th>
+                      <th className="px-6 py-6 text-[10px] font-black text-[#6B7160] uppercase tracking-widest">Risk Profile</th>
+                      <th className="px-6 py-6 text-[10px] font-black text-[#6B7160] uppercase tracking-widest">Score</th>
+                      <th className="px-6 py-6 text-[10px] font-black text-[#6B7160] uppercase tracking-widest text-center">Trend</th>
+                      <th className="px-8 sm:px-12 py-6 text-[10px] font-black text-[#6B7160] uppercase tracking-widest">Recommendation</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((a) => {
+                      const label = a.label ?? (a.score >= 70 ? "high" : a.score >= 45 ? "medium" : "low");
+                      const style = RISK_STYLE[label];
+                      return (
+                        <tr key={a.id} className="border-b-2 border-[#F7F5EE] hover:bg-[#F7F5EE]/30 transition-colors group">
+                          <td className="px-8 sm:px-12 py-6">
+                            <p className="text-[15px] font-black text-[#1A1C15] group-hover:text-[#4D5A2C] transition-colors">{a.area}</p>
+                            <p className="text-[11px] font-bold text-[#6B7160] uppercase tracking-widest">{a.category}</p>
+                          </td>
+                          <td className="px-6 py-6">
+                            <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${style.bg} ${style.color} border-2 ${style.border}`}>
+                              {label}
+                            </span>
+                          </td>
+                          <td className="px-6 py-6">
+                            <div className="flex items-center gap-3">
+                              <div className="w-24 h-2 bg-[#EEF3D2] rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full rounded-full transition-all duration-1000 ${a.score >= 70 ? "bg-[#BA1A1A]" : a.score >= 45 ? "bg-[#B45309]" : "bg-[#166534]"}`}
+                                  style={{ width: `${a.score}%` }}
+                                />
+                              </div>
+                              <span className="text-[13px] font-black text-[#1A1C15]">{a.score}</span>
                             </div>
-                            <strong style={{ fontSize:"0.85rem" }}>{a.score}</strong>
-                          </div>
-                        </td>
-                        <td>
-                          <span style={{ background:s.bg, color:s.color, border:`1px solid ${s.border}`, borderRadius:999, padding:"2px 10px", fontSize:"0.72rem", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.06em" }}>
-                            {label}
-                          </span>
-                        </td>
-                        <td style={{ fontWeight:700, fontSize:"0.85rem", color: a.trend.startsWith("+")?"#ef4444":"#2e7d32" }}>{a.trend}</td>
-                        <td style={{ fontSize:"0.8rem", color:"#1c1c18", maxWidth:200 }}>{a.recommendedAction}</td>
-                        <td style={{ fontSize:"0.75rem", color:"#6b7466", maxWidth:180 }}>{a.outlook}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          </td>
+                          <td className={`px-6 py-6 text-center text-xs font-black ${a.trend.startsWith("+") ? "text-[#BA1A1A]" : "text-[#166534]"}`}>
+                            {a.trend}
+                          </td>
+                          <td className="px-8 sm:px-12 py-6">
+                            <p className="text-[13px] font-bold text-[#1A1C15] line-clamp-1 group-hover:line-clamp-none transition-all">{a.recommendedAction}</p>
+                            <p className="text-[11px] font-medium text-[#6B7160] mt-1 italic">{a.outlook}</p>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <section className="bg-white border-2 border-[#E8EDD0] rounded-[48px] p-10 shadow-sm flex flex-col">
+                <div className="flex items-center gap-3 mb-10">
+                  <div className="w-10 h-10 bg-[#EEF3D2] text-[#4D5A2C] rounded-xl flex items-center justify-center">
+                    <BarChart3 size={20} strokeWidth={2.5} />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-black text-[#1A1C15] tracking-tight">Feature Weights</h3>
+                    <p className="text-[10px] font-black text-[#6B7160] uppercase tracking-widest">Indicator importance ranking</p>
+                  </div>
+                </div>
+                <div className="h-[300px]">
+                  <Plot
+                    data={[{
+                      type:"bar", orientation:"h",
+                      x: FEATURE_IMPORTANCE.map(f => f.importance),
+                      y: FEATURE_IMPORTANCE.map(f => f.feature),
+                      marker:{ color: FEATURE_IMPORTANCE.map(f => f.color), radius: 8 },
+                      text: FEATURE_IMPORTANCE.map(f => `${(f.importance*100).toFixed(0)}%`),
+                      textposition:"outside",
+                    }]}
+                    layout={{
+                      margin:{ l:140, r:40, t:10, b:30 },
+                      paper_bgcolor:"transparent", plot_bgcolor:"transparent",
+                      xaxis:{ showgrid:false, zeroline:false, tickformat:".0%", range:[0,0.35], tickfont:{size:10, color:'#6B7160'} },
+                      yaxis:{ automargin:true, tickfont:{ size:11, font:'Inter', weight:900, color:'#1A1C15' } },
+                      font:{ family:"Inter, sans-serif", size:11 },
+                    }}
+                    config={{ displayModeBar:false, responsive:true }}
+                    style={{ width:"100%", height:"100%" }}
+                  />
+                </div>
+              </section>
+
+              <section className="bg-white border-2 border-[#E8EDD0] rounded-[48px] p-10 shadow-sm flex flex-col">
+                <div className="flex items-center gap-3 mb-10">
+                  <div className="w-10 h-10 bg-[#EEF3D2] text-[#4D5A2C] rounded-xl flex items-center justify-center">
+                    <Binary size={20} strokeWidth={2.5} />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-black text-[#1A1C15] tracking-tight">Confidence Matrix</h3>
+                    <p className="text-[10px] font-black text-[#6B7160] uppercase tracking-widest">Actual vs Predicted validation</p>
+                  </div>
+                </div>
+                <div className="h-[300px]">
+                  <Plot
+                    data={[{
+                      type:"heatmap",
+                      z: CONFUSION_MATRIX.matrix,
+                      x: CONFUSION_MATRIX.labels,
+                      y: CONFUSION_MATRIX.labels,
+                      colorscale:[["0","#F7F5EE"],["1","#4D5A2C"]],
+                      showscale:false,
+                      text: CONFUSION_MATRIX.matrix.map(r => r.map(String)),
+                      texttemplate:"%{text}",
+                      textfont:{ size:16, color:"white", weight:900 },
+                    }]}
+                    layout={{
+                      margin:{ l:80, r:20, t:10, b:50 },
+                      paper_bgcolor:"transparent", plot_bgcolor:"transparent",
+                      xaxis:{ title:"Predicted", tickfont:{ size:11, weight:900 }, gridcolor:'transparent' },
+                      yaxis:{ title:"Actual", tickfont:{ size:11, weight:900 }, gridcolor:'transparent' },
+                      font:{ family:"Inter, sans-serif", size:11 },
+                    }}
+                    config={{ displayModeBar:false, responsive:true }}
+                    style={{ width:"100%", height:"100%" }}
+                  />
+                </div>
+              </section>
             </div>
-          </section>
-
-          {/* Feature importance chart */}
-          <div className="content-grid">
-            <section className="tool-surface">
-              <div className="surface-header"><div><p className="section-kicker">Explainability</p><h3>Feature importance</h3></div></div>
-              <Plot
-                data={[{
-                  type:"bar", orientation:"h",
-                  x: FEATURE_IMPORTANCE.map(f => f.importance),
-                  y: FEATURE_IMPORTANCE.map(f => f.feature),
-                  marker:{ color: FEATURE_IMPORTANCE.map(f => f.color) },
-                  text: FEATURE_IMPORTANCE.map(f => `${(f.importance*100).toFixed(0)}%`),
-                  textposition:"outside",
-                }]}
-                layout={{
-                  height:280, margin:{ l:160, r:40, t:10, b:30 },
-                  paper_bgcolor:"transparent", plot_bgcolor:"transparent",
-                  xaxis:{ showgrid:false, zeroline:false, tickformat:".0%", range:[0,0.35] },
-                  yaxis:{ automargin:true, tickfont:{ size:11 } },
-                  font:{ family:"Public Sans,sans-serif", size:11 },
-                }}
-                config={{ displayModeBar:false, responsive:true }}
-                style={{ width:"100%" }}
-              />
-            </section>
-
-            <section className="tool-surface">
-              <div className="surface-header"><div><p className="section-kicker">Validation</p><h3>Confusion matrix</h3></div></div>
-              <Plot
-                data={[{
-                  type:"heatmap",
-                  z: CONFUSION_MATRIX.matrix,
-                  x: CONFUSION_MATRIX.labels,
-                  y: CONFUSION_MATRIX.labels,
-                  colorscale:[["0","#fef9ec"],["1","#59623c"]],
-                  showscale:false,
-                  text: CONFUSION_MATRIX.matrix.map(r => r.map(String)),
-                  texttemplate:"%{text}",
-                  textfont:{ size:16, color:"white" },
-                }]}
-                layout={{
-                  height:280, margin:{ l:70, r:20, t:10, b:50 },
-                  paper_bgcolor:"transparent", plot_bgcolor:"transparent",
-                  xaxis:{ title:"Predicted", tickfont:{ size:11 } },
-                  yaxis:{ title:"Actual", tickfont:{ size:11 } },
-                  font:{ family:"Public Sans,sans-serif", size:11 },
-                }}
-                config={{ displayModeBar:false, responsive:true }}
-                style={{ width:"100%" }}
-              />
-            </section>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ── TAB: Model Card ── */}
-      {activeTab === "model" && (
-        <div style={{ display:"grid", gap:"1.25rem" }}>
-          <div className="content-grid">
-            {/* Model specs */}
-            <section className="tool-surface">
-              <div className="surface-header"><div><p className="section-kicker">Architecture</p><h3>Model specification</h3></div><Brain size={20} color="#59623c"/></div>
-              <div style={{ display:"grid", gap:"0.6rem" }}>
+        {activeTab === "model" && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <section className="bg-white border-2 border-[#E8EDD0] rounded-[48px] p-10 shadow-sm">
+              <div className="flex items-center gap-3 mb-10">
+                <div className="w-10 h-10 bg-[#EEF3D2] text-[#4D5A2C] rounded-xl flex items-center justify-center">
+                  <Brain size={20} strokeWidth={2.5} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-[#1A1C15] tracking-tight">Core Architecture</h3>
+                  <p className="text-[10px] font-black text-[#6B7160] uppercase tracking-widest">Model technical specifications</p>
+                </div>
+              </div>
+              <div className="space-y-4">
                 {[
                   ["Algorithm",        MODEL_INFO.algorithm],
-                  ["Version",          MODEL_INFO.version],
-                  ["n_estimators",     String(MODEL_INFO.nEstimators)],
-                  ["max_depth",        String(MODEL_INFO.maxDepth)],
-                  ["Cross-validation", MODEL_INFO.crossValidation],
-                  ["Input features",   String(MODEL_INFO.features)],
-                  ["Output classes",   MODEL_INFO.classes.join(", ")],
-                  ["Trained on",       MODEL_INFO.trainedOn],
+                  ["Engine Version",   MODEL_INFO.version],
+                  ["Estimators",       String(MODEL_INFO.nEstimators)],
+                  ["Max Depth",        String(MODEL_INFO.maxDepth)],
+                  ["Validation",       MODEL_INFO.crossValidation],
+                  ["Input Features",   String(MODEL_INFO.features)],
+                  ["Target Classes",   MODEL_INFO.classes.join(", ")],
+                  ["Training Basis",   MODEL_INFO.trainedOn],
                 ].map(([k,v]) => (
-                  <div key={k} style={{ display:"flex", justifyContent:"space-between", padding:"0.5rem 0", borderBottom:"1px solid #e8edca", fontSize:"0.85rem" }}>
-                    <span style={{ color:"#6b7466", fontWeight:600 }}>{k}</span>
-                    <strong style={{ color:"#1c1c18" }}>{v}</strong>
+                  <div key={k} className="flex justify-between items-center py-4 border-b-2 border-[#F7F5EE] last:border-0 group cursor-default">
+                    <span className="text-[13px] font-black text-[#6B7160] group-hover:text-[#4D5A2C] transition-colors">{k}</span>
+                    <span className="text-[14px] font-black text-[#1A1C15]">{v}</span>
                   </div>
                 ))}
               </div>
             </section>
 
-            {/* Metrics */}
-            <section className="tool-surface">
-              <div className="surface-header"><div><p className="section-kicker">Performance</p><h3>Validation metrics</h3></div><Target size={20} color="#59623c"/></div>
-              <div style={{ display:"grid", gap:"0.75rem" }}>
+            <section className="bg-[#1A1C15] rounded-[48px] p-10 shadow-xl text-white">
+              <div className="flex items-center gap-3 mb-10">
+                <div className="w-10 h-10 bg-white/10 text-white rounded-xl flex items-center justify-center">
+                  <Target size={20} strokeWidth={2.5} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black tracking-tight">Validation Metrics</h3>
+                  <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Benchmarked performance scores</p>
+                </div>
+              </div>
+              <div className="space-y-8">
                 {[
-                  { label:"Accuracy",  val:MODEL_INFO.accuracy, max:100, color:"#59623c",  unit:"%" },
-                  { label:"Precision", val:MODEL_INFO.precision, max:100, color:"#2e7d32",  unit:"%" },
-                  { label:"Recall",    val:MODEL_INFO.recall,    max:100, color:"#1d4ed8",  unit:"%" },
-                  { label:"F1 Score",  val:MODEL_INFO.f1,        max:100, color:"#b45309",  unit:"%" },
-                  { label:"AUC-ROC",   val:MODEL_INFO.auc*100,   max:100, color:"#8b5cf6",  unit:"%" },
-                ].map(({ label, val, max, color, unit }) => (
+                  { label:"Accuracy",  val:MODEL_INFO.accuracy, color:"bg-emerald-500" },
+                  { label:"Precision", val:MODEL_INFO.precision, color:"bg-sky-500" },
+                  { label:"Recall",    val:MODEL_INFO.recall,    color:"bg-indigo-500" },
+                  { label:"F1 Score",  val:MODEL_INFO.f1,        color:"bg-amber-500" },
+                  { label:"AUC-ROC",   val:MODEL_INFO.auc*100,   color:"bg-rose-500" },
+                ].map(({ label, val, color }) => (
                   <div key={label}>
-                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-                      <span style={{ fontSize:"0.82rem", color:"#46483e", fontWeight:600 }}>{label}</span>
-                      <strong style={{ fontSize:"0.85rem", color }}>{val}{unit}</strong>
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-[13px] font-black uppercase tracking-widest text-white/60">{label}</span>
+                      <span className="text-2xl font-black">{val}%</span>
                     </div>
-                    <div style={{ height:8, borderRadius:999, background:"#e8edca" }}>
-                      <div style={{ width:`${(val/max)*100}%`, height:"100%", borderRadius:999, background:color, transition:"width 0.6s ease" }}/>
+                    <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full transition-all duration-1000 ${color}`} style={{ width: `${val}%` }} />
                     </div>
                   </div>
                 ))}
               </div>
             </section>
           </div>
+        )}
 
-          {/* Dataset card */}
-          <section className="tool-surface" style={{ background:"linear-gradient(135deg,#f6f9ee 0%,#fff 100%)", border:"2px solid #ccd6a6" }}>
-            <div className="surface-header">
-              <div><p className="section-kicker">Training Data</p><h3>Dataset information</h3></div>
-              <button className="primary-button" onClick={downloadCSV}
-                style={{ display:"flex", alignItems:"center", gap:"0.4rem", fontSize:"0.8rem", padding:"0.5rem 0.9rem" }}>
-                <Download size={13}/> Download CSV
-              </button>
-            </div>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:"1.25rem" }}>
-              {[
-                { label:"Dataset file",    val:MODEL_INFO.dataset,       Icon:Database   },
-                { label:"Training records",val:String(MODEL_INFO.datasetRows), Icon:TrendingUp },
-                { label:"Primary source",  val:MODEL_INFO.datasetSource, Icon:Info       },
-                { label:"Features",        val:`${MODEL_INFO.features} input columns`, Icon:FlaskConical },
-              ].map(({ label, val, Icon }) => (
-                <div key={label} style={{ padding:"1rem", background:"white", borderRadius:12, border:"1.5px solid #e8edca" }}>
-                  <Icon size={16} color="#59623c" style={{ marginBottom:"0.4rem" }}/>
-                  <p style={{ fontSize:"0.65rem", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"#6b7466", marginBottom:"0.3rem" }}>{label}</p>
-                  <strong style={{ fontSize:"0.875rem", color:"#1c1c18" }}>{val}</strong>
+        {activeTab === "calendar" && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+             <section className="bg-white border-2 border-[#E8EDD0] rounded-[48px] p-10 shadow-sm flex flex-col">
+              <div className="flex items-center gap-3 mb-10">
+                <div className="w-10 h-10 bg-[#DBEAFE] text-[#1D4ED8] rounded-xl flex items-center justify-center">
+                  <Calendar size={20} strokeWidth={2.5} />
                 </div>
-              ))}
-            </div>
-            <div style={{ marginTop:"1rem", padding:"0.75rem 1rem", background:"#f6f9ee", borderRadius:10, border:"1px solid #ccd6a6", fontSize:"0.8rem", color:"#46483e" }}>
-              <strong style={{ color:"#59623c" }}>Referenced datasets:</strong>{" "}
-              OCHA Humanitarian Data Exchange (HDX) · WFP Open Data Portal · ACAPS Severity Index · ReliefWeb Crisis Indicators
-            </div>
-          </section>
-        </div>
-      )}
-
-      {/* ── TAB: Calendar ── */}
-      {activeTab === "calendar" && (
-        <div className="content-grid">
-          <section className="tool-surface">
-            <div className="surface-header"><div><p className="section-kicker">Schedule</p><h3>Event calendar</h3></div></div>
-            <MiniCalendar events={UPCOMING_EVENTS}/>
-            {/* Legend */}
-            <div style={{ display:"flex", flexWrap:"wrap", gap:"0.6rem", marginTop:"1rem", paddingTop:"0.75rem", borderTop:"1px solid #e8edca" }}>
-              {Object.entries(EVENT_COLOR).map(([type, color]) => (
-                <div key={type} style={{ display:"flex", alignItems:"center", gap:"0.35rem", fontSize:"0.72rem", color:"#46483e", fontWeight:600 }}>
-                  <div style={{ width:8, height:8, borderRadius:"50%", background:color }}/>
-                  {type}
+                <div>
+                  <h3 className="text-2xl font-black text-[#1A1C15] tracking-tight">Deployment Window</h3>
+                  <p className="text-[10px] font-black text-[#6B7160] uppercase tracking-widest">Predicted operational timeline</p>
                 </div>
-              ))}
-            </div>
-          </section>
+              </div>
+              <div className="flex-1">
+                <MiniCalendar events={UPCOMING_EVENTS}/>
+              </div>
+            </section>
 
-          {/* Upcoming event list */}
-          <section className="tool-surface">
-            <div className="surface-header"><div><p className="section-kicker">Upcoming</p><h3>Next 30 days</h3></div></div>
-            <div style={{ display:"flex", flexDirection:"column", gap:"0.6rem", maxHeight:520, overflowY:"auto" }}>
-              {UPCOMING_EVENTS.sort((a,b) => a.date.localeCompare(b.date)).map(e => {
-                const s = RISK_STYLE[e.priority] || RISK_STYLE.low;
-                return (
-                  <div key={e.id} style={{ display:"flex", gap:"0.85rem", padding:"0.75rem", borderRadius:10, border:"1.5px solid #e8edca", background:"#f6f9ee", alignItems:"flex-start" }}>
-                    <div style={{ width:44, textAlign:"center", flexShrink:0 }}>
-                      <div style={{ fontSize:"0.6rem", fontWeight:700, textTransform:"uppercase", color:"#6b7466" }}>
-                        {new Date(e.date).toLocaleString("en",{month:"short"})}
+            <section className="bg-white border-2 border-[#E8EDD0] rounded-[48px] p-10 shadow-sm flex flex-col">
+              <div className="flex items-center gap-3 mb-10">
+                <div className="w-10 h-10 bg-[#DBEAFE] text-[#1D4ED8] rounded-xl flex items-center justify-center">
+                  <Clock size={20} strokeWidth={2.5} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-[#1A1C15] tracking-tight">Timeline Feed</h3>
+                  <p className="text-[10px] font-black text-[#6B7160] uppercase tracking-widest">Chronological intervention steps</p>
+                </div>
+              </div>
+              <div className="space-y-4 h-[460px] overflow-y-auto no-scrollbar pr-2">
+                {UPCOMING_EVENTS.sort((a,b) => a.date.localeCompare(b.date)).map(e => {
+                  const label = e.priority;
+                  const style = RISK_STYLE[label];
+                  return (
+                    <div key={e.id} className="group p-6 bg-[#F7F5EE] border-2 border-transparent hover:border-[#1D4ED8] rounded-[32px] transition-all flex gap-6 items-start">
+                      <div className="text-center w-16 flex-shrink-0">
+                        <p className="text-[10px] font-black text-[#6B7160] uppercase tracking-widest mb-1">{new Date(e.date).toLocaleString("en",{month:"short"})}</p>
+                        <p className="text-3xl font-black text-[#1A1C15]">{new Date(e.date).getDate()}</p>
                       </div>
-                      <div style={{ fontSize:"1.4rem", fontWeight:900, color:"#1c1c18", lineHeight:1 }}>
-                        {new Date(e.date).getDate()}
+                      <div className="flex-1">
+                        <h5 className="text-[15px] font-black text-[#1A1C15] mb-1 group-hover:text-[#1D4ED8] transition-colors">{e.title}</h5>
+                        <p className="text-[11px] font-bold text-[#6B7160] mb-3">{e.area}</p>
+                        <div className="flex items-center gap-3">
+                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${style.bg} ${style.color} border ${style.border}`}>
+                            {label} Priority
+                          </span>
+                          <div className="w-2 h-2 rounded-full" style={{ background: EVENT_COLOR[e.type] }} />
+                        </div>
                       </div>
                     </div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <strong style={{ fontSize:"0.875rem", color:"#1c1c18", display:"block" }}>{e.title}</strong>
-                      <span style={{ fontSize:"0.75rem", color:"#6b7466" }}>{e.area}</span>
-                    </div>
-                    <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:"0.3rem", flexShrink:0 }}>
-                      <span style={{ width:8, height:8, borderRadius:"50%", background:EVENT_COLOR[e.type], display:"inline-block" }}/>
-                      <span style={{ background:s.bg, color:s.color, border:`1px solid ${s.border}`, borderRadius:999, padding:"1px 8px", fontSize:"0.65rem", fontWeight:700 }}>
-                        {e.priority}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        </div>
-      )}
-
+                  );
+                })}
+              </div>
+            </section>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -5,12 +5,15 @@
 	"scripts": {
 		"dev": "next dev",
 		"build": "next build",
-		"start": "next start",
+		"start": "next start -p 8080",
 		"lint": "next lint",
 		"api:dev": "tsx watch api/server.ts",
 		"api:start": "node dist/api/server.js",
 		"api:build": "tsc -p tsconfig.json",
 		"seed:firebase": "tsx scripts/seed-firebase-admin-data.ts"
+	},
+	"engines": {
+		"node": "18.x"
 	},
 	"dependencies": {
 		"@types/react-plotly.js": "^2.6.4",

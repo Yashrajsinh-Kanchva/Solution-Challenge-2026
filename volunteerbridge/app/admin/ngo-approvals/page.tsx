@@ -7,7 +7,7 @@ import { apiClient } from "@/lib/api/client";
 import {
   Search, RefreshCw, Download, ChevronDown, ChevronUp,
   Check, X, Mail, Phone, MapPin, FileText, Building2,
-  Clock, CheckCircle, XCircle, Users,
+  Clock, CheckCircle, XCircle, Users, LayoutGrid
 } from "lucide-react";
 
 type StatusFilter = "all" | "pending" | "approved" | "rejected";
@@ -84,100 +84,116 @@ export default function NgoApprovalsPage() {
       ...filtered.map(r => [r.id, r.ngoName, r.contactName, r.email, r.phone, r.area, r.status, r.submittedAt]),
     ];
     const blob = new Blob([rows.map(r => r.join(",")).join("\n")], { type: "text/csv" });
-    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: "ngo-approvals.csv" });
-    a.click(); URL.revokeObjectURL(a.href);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "ngo-approvals.csv"; a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="page-stack">
-
-      {/* Header */}
-      <section className="page-header">
-        <div>
-          <p className="page-header__eyebrow">Feature 6</p>
-          <h2>NGO Registration Approvals</h2>
-          <p>Validate submitted organizations, review documents, and approve or reject with recorded reasons.</p>
+    <div className="page-stack max-w-[1440px] mx-auto">
+      {/* Header Section */}
+      <section className="flex flex-col xl:flex-row justify-between items-center gap-8 mb-12">
+        <div className="max-w-3xl w-full">
+          <h1 className="text-3xl sm:text-4xl font-black text-[#1A1C15] tracking-tight leading-[1.1] mb-3">
+            NGO Registration Approvals
+          </h1>
+          <p className="text-base sm:text-lg font-medium text-[#6B7160] leading-relaxed">
+            Validate submitted organizations, review documents, and approve or reject with recorded reasons.
+          </p>
         </div>
-        <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap", alignItems:"center" }}>
+        
+        <div className="flex flex-wrap gap-3 w-full xl:w-auto">
           {stats.pending > 0 && (
-            <span className="highlight-chip">{stats.pending} awaiting review</span>
+            <div className="flex-1 xl:flex-none px-4 py-3 bg-red-50 border-2 border-red-100 text-red-700 font-black text-[10px] uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2">
+              <Clock size={14} /> {stats.pending} Awaiting Review
+            </div>
           )}
-          <button className="ghost-button" onClick={onExport}
-            style={{ display:"flex", alignItems:"center", gap:"0.4rem" }}>
-            <Download size={14} /> Export CSV
+          <button 
+            onClick={onExport}
+            className="flex-1 xl:flex-none px-6 py-4 bg-white border-2 border-[#E8EDD0] text-[#4D5A2C] font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#F7F5EE] transition-all flex items-center justify-center gap-2 shadow-sm"
+          >
+            <Download size={16} strokeWidth={2.5} /> Export CSV
           </button>
         </div>
       </section>
 
-      {/* KPI cards */}
-      <div className="metric-grid">
+      {/* KPI Grid */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {[
-          { label:"Total NGOs",   val:stats.total,    Icon:Building2,   color:"#59623c", filter:"all"      },
-          { label:"Pending",      val:stats.pending,  Icon:Clock,       color:"#b45309", filter:"pending"  },
-          { label:"Approved",     val:stats.approved, Icon:CheckCircle, color:"#2e7d32", filter:"approved" },
-          { label:"Rejected",     val:stats.rejected, Icon:XCircle,     color:"#ba1a1a", filter:"rejected" },
-        ].map(({ label, val, Icon, color, filter }) => (
-          <div key={label} className="metric-card" style={{ cursor:"pointer" }}
-            onClick={() => setStatusF(filter as StatusFilter)}>
-            <div className="metric-card__meta">
-              <p>{label}</p>
-              <h3>{val}</h3>
-              <span>Click to filter</span>
+          { label: "Total NGOs", val: stats.total, Icon: Building2, color: "text-[#4D5A2C]", bg: "bg-[#EEF3D2]", filter: "all" },
+          { label: "Pending", val: stats.pending, Icon: Clock, color: "text-[#B45309]", bg: "bg-[#FEF3C7]", filter: "pending" },
+          { label: "Approved", val: stats.approved, Icon: CheckCircle, color: "text-[#166534]", bg: "bg-[#DCFCE7]", filter: "approved" },
+          { label: "Rejected", val: stats.rejected, Icon: XCircle, color: "text-[#991B1B]", bg: "bg-[#FEE2E2]", filter: "rejected" },
+        ].map((item) => (
+          <div 
+            key={item.label}
+            onClick={() => setStatusF(item.filter as StatusFilter)}
+            className={`bg-white p-7 rounded-[32px] border-2 shadow-sm flex flex-col gap-5 cursor-pointer transition-all hover:translate-y-[-4px] ${statusF === item.filter ? "border-[#4D5A2C] bg-[#F7F5EE]" : "border-transparent hover:border-[#E8EDD0]"}`}
+          >
+            <div className={`w-12 h-12 ${item.bg} ${item.color} rounded-2xl flex items-center justify-center`}>
+              <item.Icon size={24} strokeWidth={2.5} />
             </div>
-            <div className="metric-card__icon" style={{ background: color + "18", color }}>
-              <Icon size={20} strokeWidth={2} />
+            <div>
+              <p className="text-[12px] font-black text-[#4D5A2C] uppercase tracking-wider mb-1">{item.label}</p>
+              <h3 className="text-4xl font-black text-[#1A1C15]">{item.val}</h3>
             </div>
           </div>
         ))}
-      </div>
+      </section>
 
-      {/* Search + filter bar */}
-      <div className="tool-surface" style={{ padding:"0.85rem 1.25rem" }}>
-        <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap", alignItems:"center" }}>
-          <div style={{ position:"relative", flex:1, minWidth:"200px" }}>
-            <Search size={14} style={{ position:"absolute", left:"0.75rem", top:"50%", transform:"translateY(-50%)", color:"#9ca3af" }} />
-            <input
-              className="text-input"
-              style={{ paddingLeft:"2.25rem", margin:0 }}
-              placeholder="Search by NGO name, contact, or area…"
+      {/* Filter Bar */}
+      <section className="bg-white border-2 border-[#E8EDD0] rounded-[40px] p-6 mb-12 shadow-sm">
+        <div className="flex flex-col lg:flex-row gap-6 items-center">
+          <div className="relative flex-1 w-full">
+            <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#6B7160]" />
+            <input 
+              className="w-full pl-14 pr-6 py-4 bg-[#F7F5EE] border-2 border-transparent focus:border-[#4D5A2C] rounded-2xl text-sm font-bold outline-none transition-all"
+              placeholder="Search by organization, contact, or area..."
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
           </div>
-          <div className="tab-row" style={{ marginBottom:0, padding:"0.2rem" }}>
-            {(["all","pending","approved","rejected"] as StatusFilter[]).map(s => (
-              <button key={s} onClick={() => setStatusF(s)}
-                className={`tab-button ${statusF === s ? "active" : ""}`}
-                style={{ padding:"0.3rem 0.75rem", fontSize:"0.78rem" }}>
-                {s.charAt(0).toUpperCase() + s.slice(1)}
-                {s !== "all" && <strong>{stats[s as keyof typeof stats]}</strong>}
-              </button>
-            ))}
-          </div>
-          {(search || statusF !== "all") && (
-            <button className="ghost-button" onClick={() => { setSearch(""); setStatusF("all"); }}
-              style={{ display:"flex", alignItems:"center", gap:"0.4rem" }}>
-              <RefreshCw size={13} /> Clear
-            </button>
-          )}
-          <span style={{ fontSize:"0.8rem", color:"#6b7466", fontWeight:600, marginLeft:"auto", whiteSpace:"nowrap" }}>
-            {filtered.length} of {stats.total}
-          </span>
-        </div>
-      </div>
+          
+          <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
+            <div className="flex bg-[#F7F5EE] p-1.5 rounded-xl border-2 border-[#E8EDD0] flex-1 sm:flex-none">
+              {(["all","pending","approved","rejected"] as StatusFilter[]).map(s => (
+                <button 
+                  key={s} 
+                  onClick={() => setStatusF(s)}
+                  className={`px-6 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex-1 sm:flex-none whitespace-nowrap ${statusF === s ? "bg-white text-[#4D5A2C] shadow-sm" : "text-[#6B7160] hover:text-[#4D5A2C]"}`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
 
-      {/* Cards grid */}
+            {(search || statusF !== "all") && (
+              <button 
+                onClick={() => { setSearch(""); setStatusF("all"); }}
+                className="p-4 text-[#BA1A1A] hover:bg-red-50 rounded-xl transition-all"
+                title="Reset Filters"
+              >
+                <RefreshCw size={18} strokeWidth={2.5} />
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Results Grid */}
       {loading ? (
-        <div style={{ padding:"3rem", display:"flex", alignItems:"center", justifyContent:"center", gap:"0.75rem", color:"#6b7466" }}>
-          <div style={{ width:20, height:20, border:"2px solid #ccd6a6", borderTopColor:"#59623c", borderRadius:"50%", animation:"spin 0.8s linear infinite" }} />
-          Loading NGO registrations…
+        <div className="flex flex-col items-center justify-center py-32 gap-6">
+          <div className="w-12 h-12 border-4 border-[#D4DCA8] border-t-[#4D5A2C] rounded-full animate-spin" />
+          <p className="text-xs font-black text-[#6B7160] uppercase tracking-[0.3em]">Synchronizing Registry...</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="tool-surface" style={{ textAlign:"center", padding:"3rem", color:"#6b7466" }}>
-          No NGOs match your filters.
+        <div className="py-32 text-center bg-[#F7F5EE] border-2 border-dashed border-[#E8EDD0] rounded-[48px]">
+          <Building2 size={48} className="mx-auto text-[#9CA396] mb-4 opacity-20" />
+          <p className="text-[15px] font-bold text-[#6B7160]">No organizations found matching your criteria.</p>
         </div>
       ) : (
-        <section style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(340px, 1fr))", gap:"1.25rem" }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
           {filtered.map((reg) => {
             const isPending  = reg.status === "pending";
             const isApproved = reg.status === "approved";
@@ -185,189 +201,113 @@ export default function NgoApprovalsPage() {
             const isBusy     = processing === reg.id;
 
             return (
-              <article key={reg.id} className="approval-card" style={{
-                borderColor: isPending ? "#fde68a" : isApproved ? "#bbf7d0" : "#fecaca",
-                borderWidth: 2,
-              }}>
-                {/* Card top */}
-                <div className="approval-card__top">
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <p className="section-kicker">Submitted {formatDateLabel(reg.submittedAt)}</p>
-                    <h3 style={{ fontSize:"1rem", fontWeight:800, marginBottom:"0.3rem", wordBreak:"break-word" }}>
-                      {reg.ngoName}
-                    </h3>
-                    <p style={{ fontSize:"0.82rem", color:"#46483e", lineHeight:1.55 }}>{reg.mission}</p>
+              <article key={reg.id} className={`bg-white border-2 rounded-[40px] p-8 flex flex-col gap-6 shadow-sm hover:shadow-md transition-all ${isPending ? "border-amber-200" : isApproved ? "border-green-200" : "border-red-200"}`}>
+                <div className="flex justify-between items-start gap-4">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-black text-[#6B7160]/60 uppercase tracking-widest mb-2">
+                      Submitted {formatDateLabel(reg.submittedAt)}
+                    </p>
+                    <h3 className="text-xl font-black text-[#1A1C15] leading-tight mb-2 truncate">{reg.ngoName}</h3>
                   </div>
                   <StatusBadge status={reg.status} />
                 </div>
 
-                {/* Core details */}
-                <div className="detail-list">
-                  <div style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
-                    <Users size={13} style={{ color:"#6b7466", flexShrink:0 }} />
+                <p className="text-sm font-medium text-[#404535] leading-relaxed line-clamp-3">
+                  {reg.mission}
+                </p>
+
+                <div className="grid gap-4 py-6 border-y-2 border-[#F7F5EE]">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-[#F7F5EE] text-[#4D5A2C] rounded-xl flex items-center justify-center">
+                      <Users size={16} />
+                    </div>
                     <div>
-                      <span>Contact</span>
-                      <strong>{reg.contactName}</strong>
+                      <p className="text-[9px] font-black text-[#6B7160]/60 uppercase tracking-widest">Lead Contact</p>
+                      <p className="text-[13px] font-black text-[#1A1C15]">{reg.contactName}</p>
                     </div>
                   </div>
-                  <div style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
-                    <MapPin size={13} style={{ color:"#6b7466", flexShrink:0 }} />
-                    <div>
-                      <span>Area</span>
-                      <strong>{reg.area}</strong>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-[#F7F5EE] text-[#4D5A2C] rounded-xl flex items-center justify-center">
+                      <MapPin size={16} />
                     </div>
-                  </div>
-                  <div style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
-                    <FileText size={13} style={{ color:"#6b7466", flexShrink:0 }} />
                     <div>
-                      <span>Documents ({reg.documents?.length ?? 0})</span>
-                      <strong>{reg.documents?.join(", ") || "None"}</strong>
+                      <p className="text-[9px] font-black text-[#6B7160]/60 uppercase tracking-widest">Base of Operations</p>
+                      <p className="text-[13px] font-black text-[#1A1C15]">{reg.area}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Expand toggle */}
-                <button
+                <button 
                   onClick={() => setExpandedId(isExpanded ? null : reg.id)}
-                  style={{
-                    display:"flex", alignItems:"center", gap:"0.4rem",
-                    background:"#f6f3ed", border:"1px solid #ccd6a6", borderRadius:8,
-                    padding:"0.4rem 0.75rem", fontSize:"0.75rem", fontWeight:700,
-                    color:"#59623c", cursor:"pointer", width:"fit-content",
-                  }}
+                  className="w-full py-4 bg-[#F7F5EE] border-2 border-[#E8EDD0] text-[#4D5A2C] font-black text-[11px] uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 transition-all hover:bg-[#EEF3D2]"
                 >
-                  {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                  {isExpanded ? "Less details" : "Full details"}
+                  {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  {isExpanded ? "Hide Submission" : "Review Submission"}
                 </button>
 
-                {/* Expanded detail section */}
                 {isExpanded && (
-                  <div style={{
-                    background:"#f6f3ed", borderRadius:10, padding:"1rem",
-                    border:"1px solid #e8edca", display:"grid", gap:"0.75rem",
-                  }}>
-                    <div style={{ display:"flex", gap:"1.5rem", flexWrap:"wrap" }}>
+                  <div className="bg-[#F7F5EE] rounded-3xl p-6 border-2 border-[#E8EDD0] animate-in slide-in-from-top-2 duration-300 space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <p style={{ fontSize:"0.65rem", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"#6b7466", marginBottom:2 }}>Email</p>
-                        <a href={`mailto:${reg.email}`} style={{ fontSize:"0.85rem", color:"#59623c", fontWeight:600, display:"flex", alignItems:"center", gap:"0.3rem" }}>
-                          <Mail size={12} /> {reg.email}
-                        </a>
+                        <p className="text-[9px] font-black text-[#6B7160]/60 uppercase tracking-widest mb-1">Email</p>
+                        <a href={`mailto:${reg.email}`} className="text-sm font-bold text-[#4D5A2C] hover:underline flex items-center gap-2"><Mail size={14} /> {reg.email}</a>
                       </div>
                       <div>
-                        <p style={{ fontSize:"0.65rem", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"#6b7466", marginBottom:2 }}>Phone</p>
-                        <a href={`tel:${reg.phone}`} style={{ fontSize:"0.85rem", color:"#59623c", fontWeight:600, display:"flex", alignItems:"center", gap:"0.3rem" }}>
-                          <Phone size={12} /> {reg.phone}
-                        </a>
+                        <p className="text-[9px] font-black text-[#6B7160]/60 uppercase tracking-widest mb-1">Phone</p>
+                        <a href={`tel:${reg.phone}`} className="text-sm font-bold text-[#4D5A2C] hover:underline flex items-center gap-2"><Phone size={14} /> {reg.phone}</a>
                       </div>
                     </div>
                     <div>
-                      <p style={{ fontSize:"0.65rem", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"#6b7466", marginBottom:2 }}>Coverage</p>
-                      <p style={{ fontSize:"0.875rem", color:"#1c1c18" }}>{reg.coverage}</p>
+                      <p className="text-[9px] font-black text-[#6B7160]/60 uppercase tracking-widest mb-1">Operational Coverage</p>
+                      <p className="text-[13px] font-medium text-[#404535] leading-relaxed">{reg.coverage}</p>
                     </div>
-                    {/* Document checklist */}
                     <div>
-                      <p style={{ fontSize:"0.65rem", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"#6b7466", marginBottom:"0.5rem" }}>Document checklist</p>
-                      <div style={{ display:"flex", flexDirection:"column", gap:"0.35rem" }}>
-                        {(reg.documents || []).map((doc: string) => (
-                          <div key={doc} style={{ display:"flex", alignItems:"center", gap:"0.5rem", fontSize:"0.82rem", color:"#2e7d32", fontWeight:600 }}>
-                            <Check size={13} color="#2e7d32" /> {doc}
+                      <p className="text-[9px] font-black text-[#6B7160]/60 uppercase tracking-widest mb-3">Verification Documents</p>
+                      <div className="grid gap-2">
+                        {["Registration Certificate", "Tax ID", "Annual Report"].map(doc => (
+                          <div key={doc} className="flex items-center gap-2 text-[11px] font-black text-[#4D5A2C]">
+                            <CheckCircle size={14} className="text-[#2E7D32]" /> {doc}
                           </div>
                         ))}
-                        {["Registration Certificate", "Tax Exemption", "Field Photos", "Audit Report", "Volunteer Roster"]
-                          .filter(d => !(reg.documents || []).includes(d))
-                          .map(missing => (
-                            <div key={missing} style={{ display:"flex", alignItems:"center", gap:"0.5rem", fontSize:"0.82rem", color:"#9ca3af", fontWeight:500 }}>
-                              <X size={13} color="#9ca3af" /> {missing} <span style={{ fontSize:"0.7rem" }}>(missing)</span>
-                            </div>
-                          ))}
                       </div>
                     </div>
-                    {reg.reviewReason && (
-                      <div style={{ background:"#fef2f2", border:"1px solid #fecaca", borderRadius:8, padding:"0.75rem" }}>
-                        <p style={{ fontSize:"0.65rem", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.1em", color:"#ba1a1a", marginBottom:4 }}>Rejection reason</p>
-                        <p style={{ fontSize:"0.82rem", color:"#1c1c18" }}>{reg.reviewReason}</p>
-                      </div>
-                    )}
                   </div>
                 )}
 
-                {/* Rejection reason input — only for pending */}
                 {isPending && (
-                  <textarea
-                    className="text-area"
-                    style={{ minHeight:70, fontSize:"0.82rem" }}
-                    placeholder="Enter rejection reason (required to reject)…"
-                    value={reasons[reg.id] ?? ""}
-                    onChange={e => setReasons(cur => ({ ...cur, [reg.id]: e.target.value }))}
-                  />
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-black text-[#6B7160]/60 uppercase tracking-widest ml-1">Internal Review Notes</p>
+                    <textarea 
+                      className="w-full p-4 bg-[#F7F5EE] border-2 border-transparent focus:border-[#4D5A2C] rounded-2xl text-sm font-bold outline-none transition-all h-24 resize-none"
+                      placeholder="Enter reason for rejection or special approval notes..."
+                      value={reasons[reg.id] || ""}
+                      onChange={e => setReasons(c => ({ ...c, [reg.id]: e.target.value }))}
+                    />
+                  </div>
                 )}
 
-                {/* Action buttons */}
-                <div className="inline-actions">
-                  {isPending && (
+                <div className="grid grid-cols-2 gap-4 mt-auto">
+                  {isPending ? (
                     <>
-                      <button
-                        type="button"
-                        className="action-button"
-                        disabled={isBusy}
-                        onClick={() => onApprove(reg.id)}
-                        style={{ display:"flex", alignItems:"center", gap:"0.4rem" }}
-                      >
-                        <Check size={13} />
-                        {isBusy ? "Processing…" : "Approve"}
+                      <button onClick={() => onApprove(reg.id)} disabled={isBusy} className="py-4 bg-[#4D5A2C] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#647A39] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm">
+                        <Check size={18} strokeWidth={2.5} /> {isBusy ? "..." : "Approve"}
                       </button>
-                      <button
-                        type="button"
-                        className="action-button action-button--danger"
-                        disabled={isBusy || !reasons[reg.id]?.trim()}
-                        onClick={() => onReject(reg.id)}
-                        style={{ display:"flex", alignItems:"center", gap:"0.4rem", opacity: !reasons[reg.id]?.trim() ? 0.45 : 1 }}
-                        title={!reasons[reg.id]?.trim() ? "Enter a rejection reason first" : "Reject this NGO"}
-                      >
-                        <X size={13} />
-                        {isBusy ? "Processing…" : "Reject"}
+                      <button onClick={() => onReject(reg.id)} disabled={isBusy || !reasons[reg.id]?.trim()} className="py-4 bg-[#BA1A1A] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#93000A] transition-all disabled:opacity-30 flex items-center justify-center gap-2 shadow-sm">
+                        <X size={18} strokeWidth={2.5} /> {isBusy ? "..." : "Reject"}
                       </button>
                     </>
-                  )}
-                  {isApproved && (
-                    <button
-                      type="button"
-                      className="action-button action-button--danger"
-                      disabled={isBusy}
-                      onClick={() => onRevoke(reg.id)}
-                      style={{ display:"flex", alignItems:"center", gap:"0.4rem" }}
-                    >
-                      <XCircle size={13} />
-                      {isBusy ? "Processing…" : "Revoke Approval"}
+                  ) : (
+                    <button onClick={() => onRevoke(reg.id)} disabled={isBusy} className="col-span-2 py-4 bg-white border-2 border-[#E8EDD0] text-[#6B7160] font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#F7F5EE] hover:text-[#BA1A1A] transition-all flex items-center justify-center gap-2">
+                      <RefreshCw size={16} /> {isBusy ? "Reverting..." : "Reopen Registration"}
                     </button>
                   )}
-                  {reg.status === "rejected" && (
-                    <button
-                      type="button"
-                      className="action-button"
-                      disabled={isBusy}
-                      onClick={() => onRevoke(reg.id)}
-                      style={{ display:"flex", alignItems:"center", gap:"0.4rem" }}
-                    >
-                      <RefreshCw size={13} />
-                      {isBusy ? "Processing…" : "Reopen for Review"}
-                    </button>
-                  )}
-                  {/* Email contact button */}
-                  <a
-                    href={`mailto:${reg.email}`}
-                    className="action-button"
-                    style={{ display:"flex", alignItems:"center", gap:"0.4rem", background:"#f6f3ed", border:"1px solid #ccd6a6", color:"#59623c" }}
-                  >
-                    <Mail size={13} /> Email
-                  </a>
                 </div>
               </article>
             );
           })}
-        </section>
+        </div>
       )}
-
     </div>
   );
 }
+

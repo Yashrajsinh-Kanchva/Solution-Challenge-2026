@@ -2,11 +2,13 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import NeedRequestTable from "@/components/admin/NeedRequestTable";
+import TabSwitcher from "@/components/admin/TabSwitcher";
 import { apiClient } from "@/lib/api/client";
 import type { ManagedNeedRequest } from "@/lib/types/admin";
 import {
   Plus, X, Search, Filter, Download, RefreshCw,
   ClipboardList, CheckCircle, XCircle, Clock,
+  LayoutGrid, List, AlertCircle
 } from "lucide-react";
 
 const CATEGORIES = ["Food", "Health", "Shelter", "Education", "Employment", "Safety"];
@@ -56,18 +58,16 @@ export default function NeedsPage() {
     }
   };
 
-  // Stats — treat both DB status "pending_admin" and legacy "pending" as pending
   const stats = useMemo(() => {
     const validRequests = requests.filter(Boolean);
     return {
-      total:    validRequests.length,
+      all:      validRequests.length,
       pending:  validRequests.filter(r => r.status === "pending" || r.status === "pending_admin").length,
-      approved: validRequests.filter(r => r.status === "approved").length,
+      approved: validRequests.filter(r => r.status === "approved" || r.status === "assigned_to_ngo").length,
       rejected: validRequests.filter(r => r.status === "rejected").length,
     };
   }, [requests]);
 
-  // Filtered list
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return requests.filter(Boolean).filter(r => {
@@ -87,36 +87,17 @@ export default function NeedsPage() {
     setSubmitting(true);
     try {
       const dbReq = await apiClient.createRequest({
-        title: formState.title,
-        category: formState.category,
-        location: formState.location,
-        urgency: formState.urgency,
-        userId: formState.requestedBy,
-        description: formState.summary,
+        ...formState,
         beneficiaries: Number(formState.beneficiaries),
         status: "pending",
         createdAt: new Date().toISOString(),
       });
 
-      if (!dbReq) {
-        throw new Error("Failed to create request");
-      }
-
-      const newReq = {
-        ...dbReq,
-        id: dbReq.requestId || dbReq.id,
-        requestedBy: dbReq.userId || formState.requestedBy,
-        summary: dbReq.description || formState.summary,
-        status: "pending",
-        beneficiaries: Number(formState.beneficiaries),
-        createdAt: new Date().toISOString().slice(0, 10),
-      };
-
-      setRequests(cur => [newReq, ...cur]);
+      setRequests(cur => [dbReq, ...cur]);
       setFormState(DEFAULT_FORM);
       setShowForm(false);
     } catch {
-      alert("Failed to create request. Please ensure all fields are valid.");
+      alert("Failed to create request.");
     } finally {
       setSubmitting(false);
     }
@@ -159,174 +140,188 @@ export default function NeedsPage() {
     onChange: (e: any) => setFormState(c => ({ ...c, [key]: e.target.value })),
   });
 
-  return (
-    <div className="page-stack">
+  const tabItems = (["all","pending","approved","rejected"] as StatusFilter[]).map(s => ({
+    value: s,
+    label: s,
+    count: stats[s as keyof typeof stats]
+  }));
 
-      {/* ── Header ── */}
-      <section className="page-header">
-        <div>
-          <p className="page-header__eyebrow">Feature 4</p>
-          <h2>NGO Need Request Management</h2>
-          <p>Create, review, approve or reject needs — filter by status, urgency, and category.</p>
+  return (
+    <div className="page-stack max-w-[1440px] mx-auto">
+      {/* Header Section */}
+      <section className="flex flex-col xl:flex-row justify-between items-center gap-8 mb-12">
+        <div className="max-w-3xl w-full">
+          <h1 className="text-3xl sm:text-4xl font-black text-[#1A1C15] tracking-tight leading-[1.1] mb-3">
+            Need Request Management
+          </h1>
+          <p className="text-base sm:text-lg font-medium text-[#6B7160] leading-relaxed">
+            Monitor and coordinate community needs. Approve incoming reports and assign them to active NGOs for fulfillment.
+          </p>
         </div>
-        <div style={{ display:"flex", gap:"0.75rem", alignItems:"center", flexWrap:"wrap" }}>
-          {stats.pending > 0 && (
-            <span className="highlight-chip">{stats.pending} pending</span>
-          )}
-          <button className="ghost-button" onClick={onExport}
-            style={{ display:"flex", alignItems:"center", gap:"0.4rem" }}>
-            <Download size={14} /> Export CSV
+        
+        <div className="flex flex-wrap gap-3 w-full xl:w-auto">
+          <button 
+            onClick={onExport}
+            className="flex-1 xl:flex-none px-6 py-4 bg-white border-2 border-[#E8EDD0] text-[#4D5A2C] font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#F7F5EE] transition-all flex items-center justify-center gap-2 shadow-sm"
+          >
+            <Download size={16} strokeWidth={2.5} /> Export Registry
           </button>
-          <button className="primary-button" onClick={() => setShowForm(v => !v)}
-            style={{ display:"flex", alignItems:"center", gap:"0.4rem" }}>
-            {showForm ? <X size={14} /> : <Plus size={14} />}
-            {showForm ? "Cancel" : "New Request"}
+          <button 
+            onClick={() => setShowForm(!showForm)}
+            className={`flex-1 xl:flex-none px-8 py-4 font-black text-[11px] uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-2 shadow-sm ${
+              showForm ? "bg-[#BA1A1A] text-white hover:bg-[#93000A]" : "bg-[#4D5A2C] text-white hover:bg-[#647A39]"
+            }`}
+          >
+            {showForm ? <X size={18} strokeWidth={2.5} /> : <Plus size={18} strokeWidth={2.5} />}
+            {showForm ? "Close Form" : "Create Request"}
           </button>
         </div>
       </section>
 
-      {/* ── KPI strip ── */}
-      <div className="metric-grid">
+      {/* KPI Grid */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {[
-          { label:"Total",    val:stats.total,    Icon:ClipboardList, color:"#59623c" },
-          { label:"Pending",  val:stats.pending,  Icon:Clock,         color:"#b45309" },
-          { label:"Approved", val:stats.approved, Icon:CheckCircle,   color:"#2e7d32" },
-          { label:"Rejected", val:stats.rejected, Icon:XCircle,       color:"#ba1a1a" },
-        ].map(({ label, val, Icon, color }) => (
-          <div key={label} className="metric-card" style={{ cursor:"pointer" }}
-            onClick={() => setStatusF(label.toLowerCase() as StatusFilter)}>
-            <div className="metric-card__meta">
-              <p>{label} Requests</p>
-              <h3>{val}</h3>
-              <span>Click to filter</span>
+          { label: "Active Pool", val: stats.all, Icon: LayoutGrid, color: "text-[#4D5A2C]", bg: "bg-[#EEF3D2]" },
+          { label: "Action Required", val: stats.pending, Icon: Clock, color: "text-[#B45309]", bg: "bg-[#FEF3C7]" },
+          { label: "In Progress", val: stats.approved, Icon: CheckCircle, color: "text-[#166534]", bg: "bg-[#DCFCE7]" },
+          { label: "Dismissed", val: stats.rejected, Icon: XCircle, color: "text-[#991B1B]", bg: "bg-[#FEE2E2]" },
+        ].map((item) => (
+          <div 
+            key={item.label}
+            onClick={() => setStatusF(item.label.toLowerCase().includes("action") ? "pending" : item.label.toLowerCase().includes("progress") ? "approved" : item.label.toLowerCase().includes("dismissed") ? "rejected" : "all")}
+            className="bg-white p-7 rounded-[32px] border-2 border-transparent hover:border-[#E8EDD0] shadow-sm flex flex-col gap-5 cursor-pointer transition-all hover:translate-y-[-4px]"
+          >
+            <div className={`w-12 h-12 ${item.bg} ${item.color} rounded-2xl flex items-center justify-center`}>
+              <item.Icon size={24} strokeWidth={2.5} />
             </div>
-            <div className="metric-card__icon" style={{ background: color + "18", color }}>
-              <Icon size={20} strokeWidth={2} />
+            <div>
+              <p className="text-[12px] font-black text-[#4D5A2C] uppercase tracking-wider mb-1">{item.label}</p>
+              <h3 className="text-4xl font-black text-[#1A1C15]">{item.val}</h3>
             </div>
           </div>
         ))}
-      </div>
+      </section>
 
-      {/* ── Create Form (slide-in) ── */}
+
+      {/* Form Overlay */}
       {showForm && (
-        <section className="tool-surface" style={{ border:"2px solid #ccd6a6", borderRadius:16 }}>
-          <div className="surface-header">
-            <div className="section-copy">
-              <p className="section-kicker">Create Need Request</p>
-              <h3>Raise a new NGO request manually</h3>
+        <section className="mb-12 bg-white border-2 border-[#4D5A2C] rounded-[40px] p-8 sm:p-12 shadow-xl animate-in zoom-in-95 duration-300">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 bg-[#EEF3D2] text-[#4D5A2C] rounded-xl flex items-center justify-center">
+              <Plus size={20} strokeWidth={2.5} />
+            </div>
+            <div>
+              <h3 className="text-2xl font-black text-[#1A1C15] tracking-tight">New Need Request</h3>
+              <p className="text-xs font-bold text-[#6B7160] uppercase tracking-widest">Manual entry system</p>
             </div>
           </div>
-          <form className="form-grid" onSubmit={onSubmit}>
-            <input className="text-input" placeholder="Request title" required {...field("title")} />
-            <select className="text-input" {...field("category")}>
-              {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-            </select>
-            <input className="text-input" placeholder="Location / area" required {...field("location")} />
-            <input className="text-input" placeholder="NGO / requester" required {...field("requestedBy")} />
-            <select className="text-input" {...field("urgency")}>
-              <option value="low">Low urgency</option>
-              <option value="medium">Medium urgency</option>
-              <option value="high">High urgency</option>
-            </select>
-            <input className="text-input" type="number" min="1" placeholder="Beneficiaries" {...field("beneficiaries")} />
-            <textarea className="text-area" placeholder="Request summary (min 20 chars)" required {...field("summary")} />
-            <div className="form-actions" style={{ gap:"0.75rem" }}>
-              <button type="button" className="ghost-button" onClick={() => { setShowForm(false); setFormState(DEFAULT_FORM); }}>
-                Cancel
-              </button>
-              <button type="submit" className="primary-button" disabled={submitting}>
-                {submitting ? "Saving…" : "Create Request"}
+
+          <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" onSubmit={onSubmit}>
+            <div className="space-y-2 lg:col-span-2">
+              <label className="text-[10px] font-black text-[#6B7160] uppercase tracking-widest ml-1">Request Title</label>
+              <input className="w-full p-4 bg-[#F7F5EE] border-2 border-transparent focus:border-[#4D5A2C] rounded-2xl text-sm font-bold outline-none transition-all" placeholder="e.g. Urgent Medical Supply for Sector 7" required {...field("title")} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-[#6B7160] uppercase tracking-widest ml-1">Category</label>
+              <select className="w-full p-4 bg-[#F7F5EE] border-2 border-transparent focus:border-[#4D5A2C] rounded-2xl text-sm font-bold outline-none transition-all appearance-none" {...field("category")}>
+                {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-[#6B7160] uppercase tracking-widest ml-1">Location</label>
+              <input className="w-full p-4 bg-[#F7F5EE] border-2 border-transparent focus:border-[#4D5A2C] rounded-2xl text-sm font-bold outline-none transition-all" placeholder="Enter specific area" required {...field("location")} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-[#6B7160] uppercase tracking-widest ml-1">Requester Name</label>
+              <input className="w-full p-4 bg-[#F7F5EE] border-2 border-transparent focus:border-[#4D5A2C] rounded-2xl text-sm font-bold outline-none transition-all" placeholder="NGO or Citizen Name" required {...field("requestedBy")} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-[#6B7160] uppercase tracking-widest ml-1">Urgency Level</label>
+              <select className="w-full p-4 bg-[#F7F5EE] border-2 border-transparent focus:border-[#4D5A2C] rounded-2xl text-sm font-bold outline-none transition-all appearance-none" {...field("urgency")}>
+                <option value="low">Low Urgency</option>
+                <option value="medium">Medium Urgency</option>
+                <option value="high">High Urgency</option>
+              </select>
+            </div>
+            <div className="space-y-2 md:col-span-2 lg:col-span-3">
+              <label className="text-[10px] font-black text-[#6B7160] uppercase tracking-widest ml-1">Impact Summary</label>
+              <textarea className="w-full p-4 bg-[#F7F5EE] border-2 border-transparent focus:border-[#4D5A2C] rounded-3xl text-sm font-bold outline-none transition-all h-32 resize-none" placeholder="Describe the situation and required items in detail..." required {...field("summary")} />
+            </div>
+            
+            <div className="flex gap-4 md:col-span-2 lg:col-span-3 pt-4">
+              <button type="submit" disabled={submitting} className="px-10 py-4 bg-[#4D5A2C] text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-[#647A39] transition-all disabled:opacity-50 shadow-lg">
+                {submitting ? "Processing..." : "Publish Request"}
               </button>
             </div>
           </form>
         </section>
       )}
 
-      {/* ── Search + Filter bar ── */}
-      <div className="tool-surface" style={{ padding:"1rem 1.25rem" }}>
-        <div style={{ display:"flex", gap:"0.75rem", flexWrap:"wrap", alignItems:"center" }}>
-          {/* Search */}
-          <div style={{ position:"relative", flex:1, minWidth:"200px" }}>
-            <Search size={14} style={{ position:"absolute", left:"0.75rem", top:"50%", transform:"translateY(-50%)", color:"#9ca3af" }} />
-            <input
-              className="text-input"
-              style={{ paddingLeft:"2.25rem", margin:0 }}
-              placeholder="Search by title, NGO, or location…"
+      {/* Filter Section */}
+      <section className="bg-white border-2 border-[#E8EDD0] rounded-[40px] p-6 mb-8 shadow-sm">
+        <div className="flex flex-col lg:flex-row gap-6 items-center">
+          <div className="relative flex-1 w-full">
+            <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#6B7160]" />
+            <input 
+              className="w-full pl-14 pr-6 py-4 bg-[#F7F5EE] border-2 border-transparent focus:border-[#4D5A2C] rounded-2xl text-sm font-bold outline-none transition-all"
+              placeholder="Filter by title, location, or requester..."
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
           </div>
-
-          {/* Status filter */}
-          <select className="text-input" style={{ width:"auto", margin:0 }} value={statusF} onChange={e => setStatusF(e.target.value as StatusFilter)}>
-            <option value="all">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
-
-          {/* Type filter */}
-          <select className="text-input" style={{ width:"auto", margin:0 }} value={typeF} onChange={e => setTypeF(e.target.value)}>
-            <option value="all">All Types</option>
-            <option value="ISSUE">Issues</option>
-            <option value="HELP">Help Requests</option>
-          </select>
-
-          {/* Category filter */}
-          <select className="text-input" style={{ width:"auto", margin:0 }} value={categoryF} onChange={e => setCategoryF(e.target.value)}>
-            <option value="all">All Categories</option>
-            {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-          </select>
-
-          {/* Urgency filter */}
-          <select className="text-input" style={{ width:"auto", margin:0 }} value={urgencyF} onChange={e => setUrgencyF(e.target.value)}>
-            <option value="all">All Urgencies</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
-          </select>
-
-          {/* Clear filters */}
-          {(search || statusF !== "all" || categoryF !== "all" || urgencyF !== "all") && (
-            <button className="ghost-button" onClick={() => { setSearch(""); setStatusF("all"); setCategoryF("all"); setUrgencyF("all"); }}
-              style={{ display:"flex", alignItems:"center", gap:"0.4rem", whiteSpace:"nowrap" }}>
-              <RefreshCw size={13} /> Clear
-            </button>
-          )}
-
-          <span style={{ fontSize:"0.8rem", color:"#6b7466", fontWeight:600, whiteSpace:"nowrap", marginLeft:"auto" }}>
-            {filtered.length} of {stats.total} results
-          </span>
+          
+          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+            <select className="flex-1 lg:flex-none p-4 bg-[#F7F5EE] border-2 border-transparent focus:border-[#4D5A2C] rounded-xl text-xs font-black uppercase tracking-widest outline-none transition-all" value={typeF} onChange={e => setTypeF(e.target.value)}>
+              <option value="all">All Types</option>
+              <option value="ISSUE">Issues</option>
+              <option value="HELP">Help</option>
+            </select>
+            <select className="flex-1 lg:flex-none p-4 bg-[#F7F5EE] border-2 border-transparent focus:border-[#4D5A2C] rounded-xl text-xs font-black uppercase tracking-widest outline-none transition-all" value={categoryF} onChange={e => setCategoryF(e.target.value)}>
+              <option value="all">Categories</option>
+              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <select className="flex-1 lg:flex-none p-4 bg-[#F7F5EE] border-2 border-transparent focus:border-[#4D5A2C] rounded-xl text-xs font-black uppercase tracking-widest outline-none transition-all" value={urgencyF} onChange={e => setUrgencyF(e.target.value)}>
+              <option value="all">Urgency</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+            
+            {(search || statusF !== "all" || categoryF !== "all" || urgencyF !== "all" || typeF !== "all") && (
+              <button 
+                onClick={() => { setSearch(""); setStatusF("all"); setCategoryF("all"); setUrgencyF("all"); setTypeF("all"); }}
+                className="p-4 text-[#BA1A1A] hover:bg-red-50 rounded-xl transition-all"
+                title="Reset Filters"
+              >
+                <RefreshCw size={18} strokeWidth={2.5} />
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* ── Table ── */}
-      <section className="tool-surface">
-        <div className="surface-header">
-          <div className="section-copy">
-            <p className="section-kicker">Submitted Requests</p>
-            <h3>Approval workflow</h3>
-          </div>
-          <div style={{ display:"flex", gap:"0.5rem" }}>
-            <div className="tab-row" style={{ marginBottom:0, padding:"0.2rem" }}>
-              {(["all","pending","approved","rejected"] as StatusFilter[]).map(s => (
-                <button key={s} onClick={() => setStatusF(s)}
-                  className={`tab-button ${statusF === s ? "active" : ""}`}
-                  style={{ padding:"0.3rem 0.7rem", fontSize:"0.78rem" }}>
-                  {s.charAt(0).toUpperCase()+s.slice(1)}
-                  {s !== "all" && (
-                    <strong>{stats[s as keyof typeof stats]}</strong>
-                  )}
-                </button>
-              ))}
+      {/* Table Section */}
+      <section className="bg-white border-2 border-[#E8EDD0] rounded-[40px] p-8 sm:p-12 shadow-sm overflow-hidden">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <AlertCircle size={14} className="text-[#4D5A2C]" />
+              <p className="text-[10px] font-black text-[#6B7160]/60 uppercase tracking-[0.2em]">Incoming Pipeline</p>
             </div>
+            <h3 className="text-2xl font-black text-[#1A1C15] tracking-tight">Need Registry</h3>
           </div>
+          
+          <TabSwitcher 
+            items={tabItems}
+            value={statusF}
+            onChange={(v) => setStatusF(v as StatusFilter)}
+          />
         </div>
 
         {loading ? (
-          <div style={{ padding:"2rem", display:"flex", alignItems:"center", gap:"0.75rem", color:"#6b7466" }}>
-            <div style={{ width:18, height:18, border:"2px solid #ccd6a6", borderTopColor:"#59623c", borderRadius:"50%", animation:"spin 0.8s linear infinite" }} />
-            Loading requests from database…
+          <div className="flex flex-col items-center justify-center py-32 gap-6">
+            <div className="w-12 h-12 border-4 border-[#D4DCA8] border-t-[#4D5A2C] rounded-full animate-spin" />
+            <p className="text-xs font-black text-[#6B7160] uppercase tracking-[0.3em]">Synchronizing Registry...</p>
           </div>
         ) : (
           <NeedRequestTable
@@ -338,7 +333,7 @@ export default function NeedsPage() {
           />
         )}
       </section>
-
     </div>
   );
 }
+
