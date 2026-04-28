@@ -7,7 +7,7 @@ import { formatDateLabel } from "@/lib/utils/formatters";
 import { 
   Check, X, Eye, ChevronDown, ChevronUp, 
   MapPin, Users, Tag, AlertTriangle, 
-  Trash2, ExternalLink, UserPlus 
+  Trash2, ExternalLink, UserPlus, CheckCircle 
 } from "lucide-react";
 
 type Props = {

@@ -11,7 +11,7 @@ import {
   predictedAreas,
   roleBreakdown,
 } from "@/lib/mock/admin";
-import { Download, RefreshCw, TrendingUp, Users, ShieldCheck, AlertTriangle, ChevronRight, PieChart, Activity, Layers } from "lucide-react";
+import { Download, RefreshCw, TrendingUp, Users, ShieldCheck, AlertTriangle, ChevronRight, PieChart, Activity, Layers, Brain } from "lucide-react";
 
 // ── Colour palette ────────────────────────────────────────────
 const OLV   = "#4D5A2C";

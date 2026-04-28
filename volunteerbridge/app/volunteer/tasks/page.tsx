@@ -249,7 +249,7 @@ export default function MyTasksPage() {
                         </div>
                         <div className="flex-1">
                           <p className={`text-base font-black ${task.status === "Done" ? "line-through text-secondary/40" : "text-on-surface"}`}>
-                            {task.title || task.text || "Untitled task"}
+                            {task.title || "Untitled task"}
                           </p>
                         </div>
                         <div className="flex items-center gap-4 shrink-0">
