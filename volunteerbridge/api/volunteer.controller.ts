@@ -21,12 +21,17 @@ export async function assignVolunteer(req: AuthenticatedRequest, res: Response):
     const volunteerMap = (volunteersSnapshot.val() || {}) as Record<string, VolunteerRecord>;
     let volunteers = Object.values(volunteerMap);
 
-    // Filter only ACTIVE volunteers belonging to the NGO
+    // Filter ACTIVE volunteers belonging to the NGO
+    // Approved volunteers have: status="idle" (or "assigned"), membershipStatus="ACTIVE"
+    // Legacy volunteers may have: status="ACTIVE"
+    const isActive = (v: any) =>
+      v.membershipStatus === "ACTIVE" || (v.status as string)?.toUpperCase() === "ACTIVE" || v.status === "idle";
+
     if (req.user?.role === "ngo") {
       const ngoId = req.user.uid;
-      volunteers = volunteers.filter(v => v.ngoId === ngoId && (v.status as string) === "ACTIVE");
+      volunteers = volunteers.filter(v => v.ngoId === ngoId && isActive(v));
     } else {
-      volunteers = volunteers.filter(v => (v.status as string) === "ACTIVE");
+      volunteers = volunteers.filter(v => isActive(v));
     }
 
     let selectedVolunteer: VolunteerRecord | undefined;
@@ -245,12 +250,6 @@ export async function getVolunteerById(req: AuthenticatedRequest, res: Response)
 
     const volunteer = volSnapshot.val() as VolunteerRecord;
     
-    // Case-insensitive status check so volunteers stored as "active" or "ACTIVE" both work
-    if ((volunteer.status as string)?.toUpperCase() !== "ACTIVE") {
-      res.status(404).json({ error: "Volunteer is not active or approved" });
-      return;
-    }
-    
     // Check for active tasks involving this volunteer
     const activeTasksSnap = await dbRef("Request").once("value");
     const tasks = Object.values((activeTasksSnap.val() || {}) as Record<string, RequestRecord>);
@@ -277,13 +276,27 @@ export async function getVolunteerById(req: AuthenticatedRequest, res: Response)
 
 export async function getVolunteerOpportunities(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
+    // Determine the volunteer's NGO so we can filter opportunities
+    const volunteerId = req.headers["x-volunteer-id"] as string | undefined;
+    let volunteerNgoId: string | null = null;
+    if (volunteerId) {
+      const volSnap = await dbRef(`Volunteer/${volunteerId}`).once("value");
+      volunteerNgoId = volSnap.val()?.ngoId || null;
+    }
+
     const snapshot = await dbRef("VolunteerOpportunity").once("value");
     if (!snapshot.exists()) {
       res.status(200).json({ opportunities: [] });
       return;
     }
     const raw = snapshot.val() as Record<string, any>;
-    const opportunities = Object.values(raw).filter((o: any) => o.status !== "closed");
+    let opportunities = Object.values(raw).filter((o: any) => o.status !== "closed");
+
+    // If volunteer is linked to an NGO, show only that NGO's opportunities
+    if (volunteerNgoId) {
+      opportunities = opportunities.filter((o: any) => o.ngoId === volunteerNgoId);
+    }
+
     res.status(200).json({ opportunities });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch opportunities", details: (error as Error).message });
@@ -320,7 +333,12 @@ export async function applyToOpportunity(req: AuthenticatedRequest, res: Respons
       return;
     }
 
+    // Fetch volunteer details for the join request record
+    const volSnap = await dbRef(`Volunteer/${volunteerId}`).once("value");
+    const vol = volSnap.val();
+
     const applicationId = `APP_${Date.now()}_${volunteerId}`;
+    const opp = oppSnap.val();
     const application = {
       applicationId,
       opportunityId,
@@ -330,10 +348,29 @@ export async function applyToOpportunity(req: AuthenticatedRequest, res: Respons
       appliedAt: new Date().toISOString(),
     };
 
-    // Store under VolunteerOpportunity applicants AND under VolunteerApplication for easy lookup
+    // ── Build a VolunteerRequest record so NGO sees this in their "Volunteer Requests" tab ──
+    const joinRequestId = `VR_${Date.now()}_${volunteerId}`;
+    const joinRequest = {
+      id:           joinRequestId,
+      volunteerId,
+      ngoId:        opp.ngoId || "",
+      opportunityId,
+      name:         vol?.name || volunteerId,
+      email:        vol?.email || "",
+      phone:        vol?.phone || "",
+      skills:       vol?.skills || [],
+      location:     vol?.location || null,
+      message:      message || "",
+      status:       "PENDING",
+      requestType:  "opportunity_application", // distinguishes from direct join requests
+      createdAt:    new Date().toISOString(),
+    };
+
+    // Store application + NGO-visible join request in parallel
     await Promise.all([
       dbRef(`VolunteerOpportunity/${opportunityId}/applicants/${volunteerId}`).set(application),
       dbRef(`VolunteerApplication/${applicationId}`).set(application),
+      dbRef(`VolunteerRequest/${joinRequestId}`).set(joinRequest),
     ]);
 
     res.status(201).json({ message: "Application submitted", applicationId, status: "PENDING" });
@@ -356,42 +393,113 @@ export async function getVolunteerApplications(req: AuthenticatedRequest, res: R
   }
 }
 
+// ── Ahmedabad area geocoding table — resolves string location addresses to lat/lng ──
+const AREA_GEOCODES: Record<string, { lat: number; lng: number }> = {
+  "vasna":       { lat: 23.0010, lng: 72.5588 },
+  "bopal":       { lat: 23.0352, lng: 72.4668 },
+  "maninagar":   { lat: 22.9930, lng: 72.6060 },
+  "satellite":   { lat: 23.0395, lng: 72.5185 },
+  "naranpura":   { lat: 23.0562, lng: 72.5580 },
+  "navrangpura": { lat: 23.0433, lng: 72.5679 },
+  "bapunagar":   { lat: 23.0490, lng: 72.6310 },
+  "nikol":       { lat: 23.0550, lng: 72.6512 },
+  "gota":        { lat: 23.1013, lng: 72.5330 },
+  "chandkheda":  { lat: 23.1046, lng: 72.5893 },
+  "thaltej":     { lat: 23.0571, lng: 72.4951 },
+  "ward 12":     { lat: 23.0280, lng: 72.5750 },
+  "river belt":  { lat: 23.0160, lng: 72.5580 },
+  "industrial":  { lat: 23.0380, lng: 72.5890 },
+  "transit block": { lat: 23.0097, lng: 72.5800 },
+  "ahmedabad":   { lat: 23.0225, lng: 72.5714 },
+};
+
+function resolveLocation(loc: any): { lat: number; lng: number; address: string } | null {
+  if (!loc) return null;
+  // Already an object with lat/lng
+  if (typeof loc === "object" && loc.lat && loc.lng) {
+    return { lat: Number(loc.lat), lng: Number(loc.lng), address: loc.address || "" };
+  }
+  // String address — try geocode lookup
+  const addr = typeof loc === "string" ? loc : (loc.address || "");
+  if (!addr) return null;
+  const lower = addr.toLowerCase();
+  for (const [key, coords] of Object.entries(AREA_GEOCODES)) {
+    if (lower.includes(key)) return { ...coords, address: addr };
+  }
+  // Default to Ahmedabad city centre
+  return { lat: 23.0225, lng: 72.5714, address: addr };
+}
+
 // ── NEW: Volunteer Assignments ────────────────────────────────────────────────
 
 export async function getVolunteerAssignments(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const { volunteerId } = req.params;
 
-    // Find all requests where this volunteer is in the team assignments
-    const [requestsSnap, teamsSnap] = await Promise.all([
+    // Fetch all requests and NGOs in parallel
+    const [requestsSnap, volunteersSnap, ngosSnap] = await Promise.all([
       dbRef("Request").once("value"),
-      dbRef("TeamAssignment").orderByChild("volunteerId").equalTo(volunteerId).once("value"),
+      dbRef("Volunteer").once("value"),
+      dbRef("NGO").once("value"),
     ]);
 
-    const requests = Object.values((requestsSnap.val() || {}) as Record<string, any>);
-    const teamAssignments = Object.values(teamsSnap.val() || {}) as any[];
+    const allRequests = Object.values((requestsSnap.val() || {}) as Record<string, any>);
+    const allVolunteers = (volunteersSnap.val() || {}) as Record<string, any>;
+    const allNgos     = (ngosSnap.val()     || {}) as Record<string, any>;
 
-    // Build assignment list: combine request data with team data
-    const assignments = teamAssignments.map((ta: any) => {
-      const request = requests.find((r: any) => r.requestId === ta.requestId);
+    // Filter only requests where this volunteer is assigned
+    const assignedRequests = allRequests.filter((r: any) =>
+      Array.isArray(r.assignedVolunteerIds) && r.assignedVolunteerIds.includes(volunteerId)
+    );
+
+    // Build rich assignment objects from Request data (the single source of truth)
+    const assignments = assignedRequests.map((request: any) => {
+      const ngo = allNgos[request.assignedNgoId] ?? null;
+      const ngoName = ngo?.ngoName || ngo?.name || request.assignedNgoId || "NGO";
+
+      // Build team members list from all volunteers assigned to this request
+      const teamMembers = (request.assignedVolunteerIds || [])
+        .map((vid: string) => allVolunteers[vid])
+        .filter(Boolean)
+        .map((v: any) => ({
+          volunteerId: v.volunteerId,
+          name: v.name || v.volunteerId,
+          location: v.location ?? null,
+        }));
+
+      // Build resources list from assignedResources map
+      const resources = request.assignedResources
+        ? Object.entries(request.assignedResources as Record<string, number>)
+            .filter(([, qty]) => (qty as number) > 0)
+            .map(([type, quantity]) => ({ type, quantity, deliveryStatus: "Delivered" }))
+        : [];
+
       return {
-        assignmentId: ta.assignmentId || ta.requestId,
-        requestId: ta.requestId,
-        requestTitle: request?.title || ta.requestTitle || "Assignment",
-        ngoName: request?.ngoName || ta.ngoName || "NGO",
-        teamName: ta.teamName || "Team",
-        teamLeader: ta.teamLeader || "—",
-        status: ta.status || request?.status || "in_progress",
-        campLocation: request?.location || ta.campLocation || null,
-        teamMembers: ta.teamMembers || [],
-        checklist: request?.checklist || ta.checklist || [],
-        resources: request?.assignedResources ? Object.entries(request.assignedResources).map(([k, v]: any) => ({
-          type: k, quantity: v, deliveryStatus: "Delivered"
-        })) : [],
+        assignmentId:  request.requestId,
+        requestId:     request.requestId,
+        requestTitle:  request.title   || "Untitled Task",
+        description:   request.description || "",
+        ngoName,
+        ngoId:         request.assignedNgoId || "",
+        teamName:      `${ngoName} Team`,
+        teamLeader:    ngo?.contactName || "—",
+        status:        request.status  || "in_progress",
+        urgency:       request.urgency || "medium",
+        category:      request.category || "",
+        campLocation:  resolveLocation(request.location),
+        teamMembers,
+        // ── Normalize checklist: Firebase may return keyed object instead of array ──
+        checklist: Array.isArray(request.checklist)
+          ? request.checklist
+          : request.checklist && typeof request.checklist === "object"
+            ? Object.values(request.checklist)
+            : [],
+        resources,
+        assignedAt:    request.updatedAt || request.createdAt || null,
       };
     });
 
-    res.status(200).json({ assignments });
+    res.status(200).json(assignments);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch assignments", details: (error as Error).message });
   }
@@ -414,18 +522,65 @@ export async function updateChecklistTaskStatus(req: AuthenticatedRequest, res: 
     }
 
     const request = reqSnap.val() as any;
-    const checklist: any[] = request.checklist || [];
-    const taskIndex = checklist.findIndex((t: any) => t.id === taskId);
 
-    if (taskIndex === -1) {
-      res.status(404).json({ error: "Task not found in checklist" });
+    // ── Ownership check: volunteer must be assigned to this request ──
+    const assignedIds: string[] = request.assignedVolunteerIds || [];
+    if (!assignedIds.includes(volunteerId)) {
+      res.status(403).json({
+        error: "Forbidden: you are not assigned to this task",
+        volunteerId,
+        requestId,
+      });
       return;
     }
 
-    checklist[taskIndex] = { ...checklist[taskIndex], status, updatedBy: volunteerId, updatedAt: new Date().toISOString() };
-    await dbRef(`Request/${requestId}`).update({ checklist });
+    // ── Normalize checklist: Firebase may return {0:{},1:{}} object instead of array ──
+    const rawChecklist = request.checklist;
+    const checklist: any[] = Array.isArray(rawChecklist)
+      ? rawChecklist
+      : rawChecklist && typeof rawChecklist === "object"
+        ? Object.values(rawChecklist)
+        : [];
 
-    res.status(200).json({ message: "Task status updated", taskId, status });
+    // ── Find task by string-coerced ID (handles both string "chk-x-1" and legacy numeric 1) ──
+    const taskIndex = checklist.findIndex((t: any) => String(t.id) === String(taskId));
+
+    if (taskIndex === -1) {
+      res.status(404).json({ error: "Task not found in checklist", taskId, available: checklist.map(t => t.id) });
+      return;
+    }
+
+    const done = status === "Done";
+    checklist[taskIndex] = {
+      ...checklist[taskIndex],
+      status,
+      done,
+      updatedBy: volunteerId,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // ── Write directly to checklist sub-path with .set() to preserve array structure ──
+    await dbRef(`Request/${requestId}/checklist`).set(checklist);
+
+    // ── Auto-complete: if every checklist item is now "Done", mark the request completed ──
+    const allDone = checklist.every((t: any) => t.status === "Done" || t.done === true);
+    if (allDone && checklist.length > 0) {
+      await dbRef(`Request/${requestId}`).update({ status: "completed", completedAt: new Date().toISOString() });
+
+      // Free up all assigned volunteers
+      const volunteerIds: string[] = request.assignedVolunteerIds || [];
+      if (volunteerIds.length > 0) {
+        const updates: Record<string, any> = {};
+        volunteerIds.forEach(id => {
+          updates[`Volunteer/${id}/status`]          = "idle";
+          updates[`Volunteer/${id}/availability`]    = true;
+          updates[`Volunteer/${id}/currentRequestId`] = null;
+        });
+        await dbRef("/").update(updates);
+      }
+    }
+
+    res.status(200).json({ message: "Task status updated", taskId, status, allDone });
   } catch (error) {
     res.status(500).json({ error: "Failed to update task status", details: (error as Error).message });
   }

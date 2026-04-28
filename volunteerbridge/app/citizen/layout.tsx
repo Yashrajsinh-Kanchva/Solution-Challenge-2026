@@ -23,13 +23,13 @@ export default function CitizenLayout({ children }: CitizenLayoutProps) {
 			<Sidebar title="VolunteerBridge" items={CITIZEN_ROUTES} />
 			<main
 				style={{
-					marginLeft: "18rem",
+					marginLeft: "17rem",
 					flex: 1,
 					minWidth: 0,
 					display: "flex",
 					flexDirection: "column",
 					height: "100vh",
-					background: "#FCF9F3",
+					background: "#F7F5EE",
 					overflowX: "hidden",
 				}}
 			>

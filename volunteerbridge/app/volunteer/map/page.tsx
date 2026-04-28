@@ -17,15 +17,8 @@ const DynamicVolunteerMap = dynamic(() => import("@/components/volunteer/Volunte
   ),
 });
 
-// Default map center — Ahmedabad, Gujarat
+// No mock data: camp locations come from real volunteer assignments in the database.
 const DEFAULT_CENTER: [number, number] = [23.0225, 72.5714];
-
-// Mock camp data when API unavailable
-const MOCK_CAMPS = [
-  { assignmentId: "c1", requestTitle: "Flood Relief — Medical Support", ngoName: "Sahyog NGO", status: "in_progress", teamName: "Team Alpha", campLocation: { lat: 23.0010, lng: 72.5588, address: "Vasna Relief Camp" }, teamMembers: [{ name: "Rahul M." }, { name: "Sneha K." }] },
-  { assignmentId: "c2", requestTitle: "Food Distribution Drive", ngoName: "Annapurna Foundation", status: "in_progress", teamName: "Team Beta", campLocation: { lat: 23.0038, lng: 72.5985, address: "Maninagar Shelter" }, teamMembers: [{ name: "Amit P." }] },
-  { assignmentId: "c3", requestTitle: "Psychosocial Support Camp", ngoName: "Mindful Aid", status: "in_progress", teamName: "Team Gamma", campLocation: { lat: 23.0395, lng: 72.5185, address: "Satellite Community Hall" }, teamMembers: [] },
-];
 
 export default function VolunteerMapPage() {
   const router = useRouter();
@@ -33,21 +26,20 @@ export default function VolunteerMapPage() {
   const [selected, setSelected] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const volunteerId = getCookie("vb_volunteer_id") || "vol-101";
+  const volunteerId = getCookie("vb_volunteer_id") || "";
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         const data = await apiClient.getVolunteerAssignments(volunteerId);
-        const camps = (data?.length > 0 ? data : MOCK_CAMPS).filter(
+        const camps = (data || []).filter(
           (a: any) => a.campLocation?.lat && a.campLocation?.lng
         );
         setAssignments(camps);
         if (camps.length > 0) setSelected(camps[0]);
       } catch {
-        setAssignments(MOCK_CAMPS);
-        setSelected(MOCK_CAMPS[0]);
+        setAssignments([]);
       } finally {
         setLoading(false);
       }
@@ -69,7 +61,7 @@ export default function VolunteerMapPage() {
         </div>
         <div className="flex gap-3">
           <button
-            onClick={() => { setLoading(true); apiClient.getVolunteerAssignments(volunteerId).then(d => { const c = (d?.length > 0 ? d : MOCK_CAMPS).filter((a: any) => a.campLocation?.lat); setAssignments(c); if (c.length) setSelected(c[0]); setLoading(false); }).catch(() => setLoading(false)); }}
+          onClick={() => { setLoading(true); apiClient.getVolunteerAssignments(volunteerId).then(d => { const c = (d || []).filter((a: any) => a.campLocation?.lat); setAssignments(c); if (c.length) setSelected(c[0]); setLoading(false); }).catch(() => setLoading(false)); }}
             className="p-3 border-2 border-outline/60 rounded-2xl bg-white hover:border-primary transition-all shadow-sm"
           >
             <RefreshCw size={18} className={`text-secondary/60 ${loading ? "animate-spin" : ""}`} />

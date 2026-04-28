@@ -1,9 +1,23 @@
+"use client";
+import { useEffect, useState } from "react";
 import MapTabs from "@/components/admin/MapTabs";
 import { heatmapPoints, ngoPresencePoints, volunteerPresencePoints } from "@/lib/mock/admin";
+import { apiClient } from "@/lib/api/client";
 import { Flame, Building2, Users, Globe } from "lucide-react";
 
 export default function MapsPage() {
   const totalIntensity = heatmapPoints.reduce((s, p) => s + (p.intensity ?? 0), 0);
+  const [ngoCount, setNgoCount] = useState(ngoPresencePoints.length);
+  const [volunteerCount, setVolunteerCount] = useState(volunteerPresencePoints.length);
+
+  useEffect(() => {
+    Promise.all([apiClient.getNgos(), apiClient.getAllVolunteers()])
+      .then(([ngos, volunteers]) => {
+        if (ngos?.length) setNgoCount(ngos.filter((n: any) => n.status === "approved").length);
+        if (volunteers?.length) setVolunteerCount(volunteers.filter((v: any) => v.availability || v.status === "idle").length);
+      })
+      .catch(console.error);
+  }, []);
 
   return (
     <div className="page-stack">
@@ -18,10 +32,10 @@ export default function MapsPage() {
       {/* KPI strip */}
       <div className="metric-grid">
         {[
-          { label:"Hotspot Zones",      val:heatmapPoints.length,       sub:`${totalIntensity} total intensity`, Icon:Flame,     color:"#ef4444" },
-          { label:"NGO Locations",      val:ngoPresencePoints.length,    sub:"Mapped HQ locations",              Icon:Building2, color:"#59623c" },
-          { label:"Volunteer Clusters", val:volunteerPresencePoints.length, sub:"Active deployment zones",       Icon:Users,     color:"#2e7d32" },
-          { label:"Coverage Area",      val:"3 km²",                    sub:"Ahmedabad central",                 Icon:Globe,     color:"#1d4ed8" },
+          { label:"Hotspot Zones",      val:heatmapPoints.length,  sub:`${totalIntensity} total intensity`, Icon:Flame,     color:"#ef4444" },
+          { label:"NGO Locations",      val:ngoCount,               sub:"Approved NGOs mapped",            Icon:Building2, color:"#59623c" },
+          { label:"Volunteer Clusters", val:volunteerCount,         sub:"Available for deployment",        Icon:Users,     color:"#2e7d32" },
+          { label:"Coverage Area",      val:"3 km²",               sub:"Ahmedabad central",                Icon:Globe,     color:"#1d4ed8" },
         ].map(({ label, val, sub, Icon, color }) => (
           <div key={label} className="metric-card">
             <div className="metric-card__meta">

@@ -31,12 +31,16 @@ export default function DashboardPage() {
   // Dispatch / Review modals
   const [dispatchOpen, setDispatchOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [dispatchVolunteers, setDispatchVolunteers] = useState<any[]>([]);
+  const [selectedDispatch, setSelectedDispatch] = useState<Set<string>>(new Set());
+  const [dispatching, setDispatching] = useState(false);
 
   useEffect(() => {
-    Promise.all([apiClient.getDashboardStats(), apiClient.getPredictions()])
-      .then(([stats, predictions]) => {
+    Promise.all([apiClient.getDashboardStats(), apiClient.getPredictions(), apiClient.getAllVolunteers()])
+      .then(([stats, predictions, volunteers]) => {
         setData(stats);
         setPredictedAreas(predictions || []);
+        setDispatchVolunteers((volunteers || []).filter((v: any) => v.availability || v.status === "idle").slice(0, 10));
         setTasks([
           { id: 1, text: `Review ${stats?.metrics?.pendingNgoApprovals ?? 0} NGO Applications`, done: false },
           { id: 2, text: "Verify system backups", done: false },
@@ -105,12 +109,28 @@ export default function DashboardPage() {
               </button>
             </div>
             <div className="space-y-3 mb-6">
-              {["Alpha Team (8 volunteers)", "Beta Team (5 volunteers)", "Medical Unit (3 staff)"].map((team) => (
-                <label key={team} className="flex items-center gap-3 p-3 border-2 border-outline/50 rounded-button cursor-pointer hover:border-primary/50 hover:bg-surface-variant/20 transition-all">
-                  <input type="checkbox" className="w-4 h-4 rounded text-primary" />
-                  <span className="text-sm font-semibold text-on-surface">{team}</span>
-                </label>
-              ))}
+              {dispatchVolunteers.length === 0 ? (
+                <p className="text-sm text-secondary/60 italic py-4 text-center">No available volunteers found.</p>
+              ) : (
+                dispatchVolunteers.map((v: any) => (
+                  <label key={v.volunteerId} className="flex items-center gap-3 p-3 border-2 border-outline/50 rounded-button cursor-pointer hover:border-primary/50 hover:bg-surface-variant/20 transition-all">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 rounded text-primary"
+                      checked={selectedDispatch.has(v.volunteerId)}
+                      onChange={() => setSelectedDispatch(prev => {
+                        const n = new Set(prev);
+                        n.has(v.volunteerId) ? n.delete(v.volunteerId) : n.add(v.volunteerId);
+                        return n;
+                      })}
+                    />
+                    <span className="text-sm font-semibold text-on-surface">
+                      {v.name || v.volunteerId}
+                      {v.skills?.length ? ` · ${v.skills.slice(0, 2).join(", ")}` : ""}
+                    </span>
+                  </label>
+                ))
+              )}
             </div>
             <div className="flex gap-3">
               <button
@@ -120,10 +140,29 @@ export default function DashboardPage() {
                 Cancel
               </button>
               <button
-                onClick={() => { alert("Teams dispatched successfully!"); setDispatchOpen(false); }}
-                className="flex-1 py-2.5 bg-primary text-white font-bold text-sm rounded-button hover:bg-primary/90 transition-colors"
+                disabled={dispatching || selectedDispatch.size === 0}
+                onClick={async () => {
+                  const topRequest = data?.recentRequests?.[0];
+                  if (!topRequest?.requestId && !topRequest?.id) {
+                    alert("No active request found to dispatch to.");
+                    return;
+                  }
+                  const reqId = topRequest.requestId || topRequest.id;
+                  setDispatching(true);
+                  try {
+                    await Promise.all([...selectedDispatch].map(vid => apiClient.assignVolunteer(reqId, vid)));
+                    setSelectedDispatch(new Set());
+                    setDispatchOpen(false);
+                    alert(`${selectedDispatch.size} volunteer(s) dispatched to request ${reqId}.`);
+                  } catch {
+                    alert("Dispatch failed — check API connection.");
+                  } finally {
+                    setDispatching(false);
+                  }
+                }}
+                className="flex-1 py-2.5 bg-primary text-white font-bold text-sm rounded-button hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
-                Confirm Dispatch
+                {dispatching ? "Dispatching…" : `Confirm Dispatch (${selectedDispatch.size})`}
               </button>
             </div>
           </div>
@@ -180,8 +219,8 @@ export default function DashboardPage() {
         <div className="col-span-8 space-y-10">
 
           {/* Primary Incident Card */}
-          <section className="bg-white rounded-modern border-2 border-outline/70 overflow-hidden custom-shadow">
-            <div className="px-8 py-6 border-b-2 border-outline/50 flex justify-between items-start">
+          <section className="bg-white rounded-modern border border-outline-light overflow-hidden shadow-card">
+            <div className="px-8 py-6 border-b border-outline-light flex justify-between items-start">
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <span className="bg-error text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-sm">
@@ -214,7 +253,7 @@ export default function DashboardPage() {
             </div>
 
           {/* Priority cards + briefing — no fixed height, stacks naturally */}
-          <div className="flex gap-0 border-t-2 border-outline/30">
+            <div className="flex gap-0 border-t border-outline-light">
             {/* Left: stacked priority cards */}
             <div className="flex-1 min-w-0 p-6 space-y-4 overflow-y-auto no-scrollbar" style={{ maxHeight: "480px" }}>
               {predictedAreas.length > 0 ? (
@@ -253,8 +292,8 @@ export default function DashboardPage() {
             </div>
 
             {/* Right: situation briefing */}
-            <div
-              className="w-72 flex-shrink-0 p-8 space-y-6 border-l-2 border-outline/50 overflow-y-auto no-scrollbar"
+              <div
+              className="w-72 flex-shrink-0 p-8 space-y-6 border-l border-outline-light overflow-y-auto no-scrollbar"
               style={{ maxHeight: "480px" }}
             >
               <div>
@@ -301,7 +340,7 @@ export default function DashboardPage() {
               {/* NGO Approvals Card */}
               <button
                 onClick={() => router.push("/admin/ngo-approvals")}
-                className="group text-left p-6 bg-white border-2 border-outline/60 rounded-modern hover:border-primary/60 hover:shadow-xl transition-all duration-300 custom-shadow w-full"
+                className="group text-left p-6 bg-white border border-outline-light rounded-modern hover:border-primary/50 hover:shadow-md transition-all duration-200 shadow-card w-full"
               >
                 <div className="flex justify-between items-start mb-5">
                   <span className="bg-orange-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
@@ -330,7 +369,7 @@ export default function DashboardPage() {
               {/* Latest Users Card */}
               <button
                 onClick={() => router.push("/admin/users")}
-                className="group text-left p-6 bg-white border-2 border-outline/60 rounded-modern hover:border-primary/60 hover:shadow-xl transition-all duration-300 custom-shadow w-full"
+                className="group text-left p-6 bg-white border border-outline-light rounded-modern hover:border-primary/50 hover:shadow-md transition-all duration-200 shadow-card w-full"
               >
                 <div className="flex justify-between items-start mb-5">
                   <span className="bg-primary text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
@@ -364,8 +403,8 @@ export default function DashboardPage() {
         <div className="col-span-4 space-y-8">
 
           {/* Admin Tasks */}
-          <div className="bg-white rounded-modern border-2 border-outline/60 overflow-hidden custom-shadow">
-            <div className="bg-surface-variant/30 px-6 py-5 border-b-2 border-outline/40 flex justify-between items-center">
+          <div className="bg-white rounded-modern border border-outline-light overflow-hidden shadow-card">
+            <div className="bg-surface-variant px-6 py-5 border-b border-outline-light flex justify-between items-center">
               <h3 className="font-black text-xs uppercase tracking-[0.2em] text-secondary/70">Admin Tasks</h3>
               <span className="text-xs font-bold text-secondary/40 bg-outline/20 px-2 py-0.5 rounded-full">
                 {tasks.filter((t) => !t.done).length} open
@@ -430,8 +469,8 @@ export default function DashboardPage() {
           </div>
 
           {/* Personnel Management */}
-          <div className="bg-white rounded-modern border-2 border-outline/60 overflow-hidden custom-shadow">
-            <div className="bg-surface-variant/30 px-6 py-5 border-b-2 border-outline/40">
+          <div className="bg-white rounded-modern border border-outline-light overflow-hidden shadow-card">
+            <div className="bg-surface-variant px-6 py-5 border-b border-outline-light">
               <h3 className="font-black text-xs uppercase tracking-[0.2em] text-secondary/70">Personnel Mgmt</h3>
             </div>
             <div className="p-6 space-y-6">
@@ -463,7 +502,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick Access */}
-          <div className="p-6 bg-primary-container/20 rounded-modern border-2 border-primary-container/60">
+          <div className="p-6 bg-primary-container rounded-modern border border-outline-light">
             <h4 className="text-[10px] font-black text-secondary uppercase tracking-widest mb-4 flex items-center gap-2">
               <Zap size={14} />
               Quick Access

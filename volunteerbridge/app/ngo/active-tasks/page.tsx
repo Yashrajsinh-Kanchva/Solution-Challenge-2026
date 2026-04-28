@@ -21,15 +21,39 @@ const STEPS = [
 ];
 
 
+// Unified checklist item schema shared between NGO and Volunteer sides.
+// Both sides read/write: { id, title, status, done }
+type ChecklistItem = { id: string | number; title: string; status: string; done: boolean };
+
+// NGO side is READ-ONLY for checklist — only volunteers can update task status.
+
+/** Normalize a raw checklist item from DB into the canonical unified schema. */
+function normalizeItem(raw: any): ChecklistItem {
+  const title  = raw.title ?? raw.text ?? "Untitled task";
+  const status = raw.status ?? (raw.done ? "Done" : "Not Started");
+  const done   = raw.done  ?? (raw.status === "Done");
+  return { id: raw.id, title, status, done };
+}
+
+const DEFAULT_CHECKLIST_ITEMS: Omit<ChecklistItem, "id">[] = [
+  { title: "Verify location and security",   status: "Not Started", done: false },
+  { title: "Dispatch assigned volunteers",    status: "Not Started", done: false },
+  { title: "Arrival and situation assessment",status: "Not Started", done: false },
+  { title: "Distribution of resources",       status: "Not Started", done: false },
+];
+
 export default function ActiveTasks() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [checklists, setChecklists] = useState<Record<string, { id: number; text: string; done: boolean }[]>>({});
+  const [checklists, setChecklists] = useState<Record<string, ChecklistItem[]>>({});
   
   const ngoId = getCookie("vb_ngo_id") || "ngo-1";
 
   useEffect(() => {
     fetchActiveTasks();
+    // Auto-refresh every 30 s so NGO sees volunteer checklist updates in near-real-time
+    const interval = setInterval(fetchActiveTasks, 30_000);
+    return () => clearInterval(interval);
   }, [ngoId]);
 
   const fetchActiveTasks = async () => {
@@ -43,20 +67,35 @@ export default function ActiveTasks() {
     );
     setTasks(active);
     
-    // Initialize checklists from DB or set defaults
-    const newChecklists: Record<string, any[]> = {};
-    active.forEach((task: any) => {
-      if (task.checklist && task.checklist.length > 0) {
-        newChecklists[task.requestId] = task.checklist;
+    // Build unified checklists — normalize from DB or seed defaults into DB
+    const newChecklists: Record<string, ChecklistItem[]> = {};
+    await Promise.all(active.map(async (task: any) => {
+      // Normalize first: Firebase may return {0:{},1:{}} instead of a proper array
+      const rawCL = task.checklist;
+      const existingItems: any[] = Array.isArray(rawCL)
+        ? rawCL
+        : rawCL && typeof rawCL === "object"
+          ? Object.values(rawCL)
+          : [];
+
+      if (existingItems.length > 0) {
+        // Normalize existing items (handles old {text, done} schema and new {title, status})
+        newChecklists[task.requestId] = existingItems.map(normalizeItem);
       } else {
-        newChecklists[task.requestId] = [
-          { id: 1, text: "Verify location and security", done: false },
-          { id: 2, text: "Dispatch assigned volunteers", done: false },
-          { id: 3, text: "Arrival and situation assessment", done: false },
-          { id: 4, text: "Distribution of resources", done: false },
-        ];
+        // First time only: seed defaults with unique string IDs, then write to DB
+        const defaults: ChecklistItem[] = DEFAULT_CHECKLIST_ITEMS.map((item, i) => ({
+          ...item,
+          id: `chk-${task.requestId}-${i + 1}`,
+        }));
+        newChecklists[task.requestId] = defaults;
+        // Write seed into DB so volunteer side sees it immediately
+        try {
+          await apiClient.updateRequestChecklist(task.requestId, defaults);
+        } catch (err) {
+          console.error("Failed to seed checklist for", task.requestId, err);
+        }
       }
-    });
+    }));
     setChecklists(newChecklists);
     
     setLoading(false);
@@ -87,32 +126,8 @@ export default function ActiveTasks() {
     }
   };
 
-  const toggleCheckItem = async (taskId: string, itemId: number) => {
-    const updatedChecklist = checklists[taskId].map(item => 
-      item.id === itemId ? { ...item, done: !item.done } : item
-    );
-    
-    setChecklists(prev => ({
-      ...prev,
-      [taskId]: updatedChecklist
-    }));
-
-    try {
-      await apiClient.updateRequestChecklist(taskId, updatedChecklist);
-    } catch (error) {
-      console.error("Failed to save checklist:", error);
-    }
-  };
-
-  const handleDispatchUpdate = async (taskId: string) => {
-    try {
-      // Simulate a dispatch update by refreshing or potentially adding a notification
-      // For now, we'll just re-fetch to ensure state is clean
-      await fetchActiveTasks();
-      alert("Dispatch update sent to all assigned volunteers!");
-    } catch (error) {
-      console.error("Failed to dispatch update:", error);
-    }
+  const handleRefreshChecklist = async () => {
+    await fetchActiveTasks();
   };
 
   const getStepIndex = (status: string) => {
@@ -122,6 +137,22 @@ export default function ActiveTasks() {
     if (status === "in_progress") return 3;
     if (status === "completed") return 4;
     return 0;
+  };
+
+  /**
+   * Derives the effective stage index from checklist item states (state-based, NOT percentage):
+   *   Stages 1–3: from DB status (NGO workflow decisions)
+   *   Stage 4 "On Site":   ANY item In Progress or Done
+   *   Stage 5 "Completed": ALL items Done
+   */
+  const computeStepFromChecklist = (dbStatus: string, checklist: ChecklistItem[]): number => {
+    const dbStep = getStepIndex(dbStatus);
+    if (!checklist || checklist.length === 0) return dbStep;
+    const allDone   = checklist.every(t => t.done === true || t.status === "Done");
+    if (allDone) return 4;
+    const anyActive = checklist.some(t => t.status === "In Progress" || t.status === "Done" || t.done === true);
+    if (anyActive) return Math.max(dbStep, 3);
+    return dbStep;
   };
 
   if (loading) {
@@ -142,7 +173,7 @@ export default function ActiveTasks() {
           <h1 className="text-3xl font-black text-on-surface">Active Tasks</h1>
           <p className="text-secondary/60 font-medium mt-1">Track tasks that are currently in progress.</p>
         </div>
-        <div className="px-4 py-2 bg-primary/10 rounded-full border border-primary/20 text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+        <div className="px-4 py-2 bg-primary-container rounded-full border border-outline-light text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
           <Activity size={16} />
           {tasks.length} Active
         </div>
@@ -151,15 +182,17 @@ export default function ActiveTasks() {
       <div className="grid gap-10">
         {tasks.length > 0 ? (
           tasks.map((task) => (
-            <div key={task.requestId} className="bg-white rounded-modern border-2 border-outline/60 custom-shadow overflow-hidden group hover:border-primary/40 transition-all duration-300">
+            <div key={task.requestId} className="bg-white rounded-modern border border-outline-light shadow-card overflow-hidden group hover:border-primary/40 hover:shadow-md transition-all duration-200">
               <div className="grid grid-cols-12">
                 {/* Left Side: Task Info & Progress */}
-                <div className="col-span-12 lg:col-span-8 p-10 border-r-2 border-outline/30">
+                <div className="col-span-12 lg:col-span-8 p-8 border-r border-outline-light">
                   <div className="flex justify-between items-start mb-10">
                     <div>
                       <div className="flex items-center gap-3 mb-4">
-                        <span className={`text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-sm ${
-                          task.urgency === "high" || task.urgency === "critical" ? "bg-red-500 text-white" : "bg-orange-500 text-white"
+                        <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${
+                          task.urgency === "high" || task.urgency === "critical"
+                            ? "bg-error-container text-error border border-danger-border"
+                            : "bg-warning-container text-warning border border-warning-border"
                         }`}>
                           {task.urgency}
                         </span>
@@ -221,40 +254,74 @@ export default function ActiveTasks() {
                   </div>
 
 
-                  {/* Stepper UI */}
-                  <div className="mb-12 relative px-4">
-                    <div className="absolute top-1/2 left-0 w-full h-1.5 bg-outline/20 -translate-y-1/2 rounded-full" />
-                    <div 
-                      className="absolute top-1/2 left-0 h-1.5 bg-primary -translate-y-1/2 transition-all duration-1000 rounded-full shadow-[0_0_12px_rgba(89,98,60,0.4)]" 
-                      style={{ width: `${(getStepIndex(task.status) / (STEPS.length - 1)) * 100}%` }}
-                    />
-                    
-                    <div className="relative flex justify-between">
-                      {STEPS.map((step, idx) => {
-                        const stepIdx = idx;
-                        const currentIdx = getStepIndex(task.status);
-                        const isCompleted = currentIdx > stepIdx;
-                        const isCurrent = currentIdx === stepIdx;
-
-                        return (
-                          <div key={step.id} className="flex flex-col items-center group/step">
-                            <div className={`w-10 h-10 rounded-full border-4 transition-all duration-500 flex items-center justify-center z-10 custom-shadow ${
-                              isCompleted ? "bg-primary border-primary text-white" :
-                              isCurrent ? "bg-white border-primary text-primary ring-4 ring-primary/10 scale-110" :
-                              "bg-white border-outline text-outline group-hover/step:border-primary/40"
-                            }`}>
-                              {isCompleted ? <CheckCircle size={20} strokeWidth={3} /> : <span className="text-xs font-black">{idx + 1}</span>}
-                            </div>
-                            <span className={`text-[10px] font-black uppercase tracking-widest mt-3 transition-colors ${
-                              isCurrent ? "text-primary" : "text-secondary/40"
-                            }`}>
-                              {step.label}
-                            </span>
+                  {/* Stepper UI — stage derived from checklist item states (state-based) */}
+                  <div className="mb-6 relative px-4">
+                    {(() => {
+                      const currentIdx = computeStepFromChecklist(
+                        task.status,
+                        checklists[task.requestId] || []
+                      );
+                      return (
+                        <>
+                          <div className="absolute top-1/2 left-0 w-full h-1.5 bg-outline/20 -translate-y-1/2 rounded-full" />
+                          <div
+                            className="absolute top-1/2 left-0 h-1.5 bg-primary -translate-y-1/2 transition-all duration-1000 rounded-full shadow-[0_0_12px_rgba(89,98,60,0.4)]"
+                            style={{ width: `${(currentIdx / (STEPS.length - 1)) * 100}%` }}
+                          />
+                          <div className="relative flex justify-between">
+                            {STEPS.map((step, idx) => {
+                              const isCompleted = currentIdx > idx;
+                              const isCurrent   = currentIdx === idx;
+                              return (
+                                <div key={step.id} className="flex flex-col items-center group/step">
+                                  <div className={`w-10 h-10 rounded-full border-4 transition-all duration-500 flex items-center justify-center z-10 custom-shadow ${
+                                    isCompleted ? "bg-primary border-primary text-white" :
+                                    isCurrent   ? "bg-white border-primary text-primary ring-4 ring-primary/10 scale-110" :
+                                                  "bg-white border-outline text-outline group-hover/step:border-primary/40"
+                                  }`}>
+                                    {isCompleted
+                                      ? <CheckCircle size={20} strokeWidth={3} />
+                                      : <span className="text-xs font-black">{idx + 1}</span>
+                                    }
+                                  </div>
+                                  <span className={`text-[10px] font-black uppercase tracking-widest mt-3 transition-colors ${
+                                    isCurrent ? "text-primary" : "text-secondary/40"
+                                  }`}>{step.label}</span>
+                                </div>
+                              );
+                            })}
                           </div>
-                        );
-                      })}
-                    </div>
+                        </>
+                      );
+                    })()}
                   </div>
+
+                  {/* Checklist completion indicator — linked to volunteer progress */}
+                  {(() => {
+                    const cl = checklists[task.requestId] || [];
+                    const clTotal = cl.length;
+                    const clDone  = cl.filter(i => i.done).length;
+                    const clPct   = clTotal > 0 ? Math.round((clDone / clTotal) * 100) : 0;
+                    if (clTotal === 0) return null;
+                    return (
+                      <div className="mb-10 px-1">
+                        <div className="flex justify-between items-center mb-1.5">
+                          <p className="text-[9px] font-black text-secondary/40 uppercase tracking-widest flex items-center gap-1.5">
+                            <ListTodo size={11} className="text-primary" /> Checklist Completion
+                          </p>
+                          <p className="text-[9px] font-black text-primary">{clDone}/{clTotal} items done</p>
+                        </div>
+                        <div className="w-full h-2 bg-outline/20 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-700 ${
+                              clPct === 100 ? "bg-green-500" : clPct >= 50 ? "bg-primary" : "bg-orange-400"
+                            }`}
+                            style={{ width: `${clPct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div className="flex gap-6 mt-10">
                     {task.status === "Accepted" && (!task.assignedVolunteerIds || task.assignedVolunteerIds.length === 0) ? (
@@ -284,10 +351,10 @@ export default function ActiveTasks() {
                       </div>
                     )}
                     <button 
-                      onClick={() => handleDispatchUpdate(task.requestId)}
+                      onClick={handleRefreshChecklist}
                       className="px-8 py-4 border-2 border-outline/60 text-secondary font-black text-xs uppercase tracking-widest rounded-button hover:bg-surface-variant/20 transition-all active:scale-95"
                     >
-                      Update Volunteers
+                      Refresh Checklist
                     </button>
                   </div>
                 </div>
@@ -295,27 +362,38 @@ export default function ActiveTasks() {
                 {/* Right Side: Checklist & Volunteers */}
                 <div className="col-span-12 lg:col-span-4 bg-surface-variant/10 p-10 flex flex-col justify-between relative overflow-hidden">
                   <div className="relative z-10">
-                    <h4 className="text-xs font-black text-on-surface uppercase tracking-widest mb-8 flex items-center gap-3">
+                    <h4 className="text-xs font-black text-on-surface uppercase tracking-widest mb-2 flex items-center gap-3">
                       <ListTodo size={20} className="text-primary" />
                       Checklist
+                      <span className="ml-auto text-[9px] font-black px-2 py-0.5 bg-blue-50 text-blue-600 border border-blue-200 rounded-full uppercase tracking-widest">
+                        View Only
+                      </span>
                     </h4>
+                    <p className="text-[9px] font-bold text-secondary/40 uppercase tracking-widest mb-6">Updated by assigned volunteers</p>
                     <div className="space-y-5">
                       {checklists[task.requestId]?.map((item) => (
-                        <div 
-                          key={item.id} 
-                          onClick={() => toggleCheckItem(task.requestId, item.id)}
-                          className="flex items-center gap-4 cursor-pointer group/item"
-                        >
-                          <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all shadow-sm ${
-                            item.done ? "bg-primary border-primary text-white" : "bg-white border-outline/60 group-hover/item:border-primary/50"
+                        // READ-ONLY: no onClick, no cursor-pointer — NGO cannot modify checklist
+                        <div key={item.id} className="flex items-center gap-4">
+                          {/* Static checkbox — visual only, not interactive */}
+                          <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shadow-sm ${
+                            item.done ? "bg-primary border-primary text-white" : "bg-white border-outline/60"
                           }`}>
                             {item.done && <CheckCircle size={14} strokeWidth={3} />}
                           </div>
-                          <span className={`text-sm font-black transition-all ${
-                            item.done ? "text-secondary/30 line-through" : "text-on-surface group-hover/item:text-primary"
-                          }`}>
-                            {item.text}
-                          </span>
+                          <div className="flex-1">
+                            <span className={`text-sm font-black ${
+                              item.done ? "text-secondary/30 line-through" : "text-on-surface"
+                            }`}>
+                              {item.title}
+                            </span>
+                            <span className={`ml-3 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                              item.status === "Done"        ? "bg-green-100 text-green-700" :
+                              item.status === "In Progress" ? "bg-orange-100 text-orange-700" :
+                                                             "bg-gray-100 text-gray-500"
+                            }`}>
+                              {item.status}
+                            </span>
+                          </div>
                         </div>
                       ))}
                     </div>

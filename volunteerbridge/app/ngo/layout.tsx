@@ -22,13 +22,13 @@ export default function NgoLayout({ children }: NgoLayoutProps) {
 		<div style={{ display:"flex", height:"100vh", overflow:"hidden" }}>
 			<Sidebar title="VolunteerBridge" items={NGO_ROUTES} />
 			<main style={{
-				marginLeft: "18rem",
+				marginLeft: "17rem",
 				flex: 1,
 				minWidth: 0,
 				display: "flex",
 				flexDirection: "column",
 				height: "100vh",
-				background: "#FCF9F3",
+				background: "#F7F5EE",
 				overflowX: "hidden",
 			}}>
 				<Navbar />

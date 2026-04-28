@@ -48,7 +48,8 @@ export default function ReportCard({
   const sev    = SEVERITY_COLOR[urgency] ?? SEVERITY_COLOR.low;
   const stat   = STATUS_STYLE[status]    ?? STATUS_STYLE.pending;
   const icon   = CATEGORY_ICON[category] ?? "📋";
-  const date   = new Date(createdAt).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" });
+  const parsedDate = createdAt ? new Date(createdAt) : new Date(NaN);
+  const date = isNaN(parsedDate.getTime()) ? "N/A" : parsedDate.toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" });
 
   return (
     <div style={card}>

@@ -39,6 +39,8 @@ export default function AnalyticsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"overview"|"volunteers"|"ngo"|"risk">("overview");
   const [refreshing, setRefreshing] = useState(false);
+  // Live KPI metrics from DB
+  const [liveMetrics, setLiveMetrics] = useState<any>(null);
   const [analytics, setAnalytics] = useState({
     needCategoryAnalytics,
     volunteerDeploymentStats,
@@ -48,7 +50,12 @@ export default function AnalyticsPage() {
   });
 
   useEffect(() => {
-    Promise.all([apiClient.getAnalytics(), apiClient.getPredictions()]).then(([dbAnalytics, dbPredictions]) => {
+    Promise.all([
+      apiClient.getAnalytics(),
+      apiClient.getPredictions(),
+      apiClient.getDashboardStats(),
+    ]).then(([dbAnalytics, dbPredictions, dbStats]) => {
+      if (dbStats) setLiveMetrics(dbStats.metrics);
       setAnalytics((current) => ({
         needCategoryAnalytics: dbAnalytics.needCategoryAnalytics ?? current.needCategoryAnalytics,
         volunteerDeploymentStats: dbAnalytics.volunteerDeploymentStats ?? current.volunteerDeploymentStats,
@@ -130,10 +137,10 @@ export default function AnalyticsPage() {
       {/* KPI row */}
       <div className="metric-grid">
         {[
-          { label:"Total Users",   val:"1,225", sub:"All roles",          Icon: Users,       color: OLV  },
-          { label:"Volunteers",    val:"705",   sub:"618 active",         Icon: Users,       color: OLV2 },
-          { label:"Approved NGOs", val:"84",    sub:"11 pending review",  Icon: ShieldCheck, color: AMB  },
-          { label:"Risk Areas",    val:"4",     sub:"AI-predicted zones", Icon: AlertTriangle, color: ERR },
+          { label:"Total Users",   val: liveMetrics ? String(liveMetrics.totalUsers)      : "—", sub:"All roles",                Icon: Users,        color: OLV  },
+          { label:"Volunteers",    val: liveMetrics ? String(liveMetrics.totalVolunteers)  : "—", sub:"Registered",             Icon: Users,        color: OLV2 },
+          { label:"Approved NGOs", val: liveMetrics ? String(liveMetrics.totalNgos)        : "—", sub:`${liveMetrics?.pendingNgoApprovals ?? "—"} pending review`, Icon: ShieldCheck, color: AMB  },
+          { label:"Risk Areas",    val: String(analytics.predictedAreas.filter((a: any) => (a.score ?? 0) >= 70).length), sub:"AI-predicted zones", Icon: AlertTriangle, color: ERR },
         ].map(({ label, val, sub, Icon, color }) => (
           <div key={label} className="metric-card">
             <div className="metric-card__meta">

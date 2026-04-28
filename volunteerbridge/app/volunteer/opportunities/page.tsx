@@ -13,13 +13,8 @@ import {
 const SKILL_OPTIONS = ["Medical", "Food Supply", "Logistics", "Construction", "Counseling", "IT", "Other"];
 const URGENCY_OPTIONS = ["all", "critical", "high", "medium", "low"];
 
-const MOCK_OPPORTUNITIES = [
-  { id: "opp-1", opportunityId: "opp-1", title: "Flood Relief — Medical Support", ngoName: "Sahyog NGO", description: "We need medical volunteers to support flood victims in low-lying areas. Your role involves first-aid, triage, and coordination with local health authorities.", requiredSkills: ["Medical", "Logistics"], totalVolunteers: 20, openPositions: 8, urgency: "critical", location: { address: "Vasna, Ahmedabad", lat: 23.0010, lng: 72.5588 }, durationStart: "2026-05-01", durationEnd: "2026-05-15", crisisType: "Natural Disaster" },
-  { id: "opp-2", opportunityId: "opp-2", title: "Food Distribution Drive", ngoName: "Annapurna Foundation", description: "Help distribute food packets to shelters across the city.", requiredSkills: ["Food Supply", "Logistics"], totalVolunteers: 30, openPositions: 15, urgency: "high", location: { address: "Maninagar, Ahmedabad", lat: 23.0038, lng: 72.5985 }, durationStart: "2026-04-28", durationEnd: "2026-05-05", crisisType: "Food Crisis" },
-  { id: "opp-3", opportunityId: "opp-3", title: "Psychosocial Support Camp", ngoName: "Mindful Aid", description: "Provide emotional support and counseling to trauma survivors.", requiredSkills: ["Counseling"], totalVolunteers: 10, openPositions: 4, urgency: "medium", location: { address: "Satellite, Ahmedabad", lat: 23.0395, lng: 72.5185 }, durationStart: "2026-05-03", durationEnd: "2026-05-13", crisisType: "Mental Health" },
-  { id: "opp-4", opportunityId: "opp-4", title: "Shelter Construction Brigade", ngoName: "BuildUp Gujarat", description: "Assist in constructing temporary shelters for displaced families.", requiredSkills: ["Construction", "Logistics"], totalVolunteers: 50, openPositions: 22, urgency: "high", location: { address: "Naroda, Ahmedabad", lat: 23.0800, lng: 72.6540 }, durationStart: "2026-04-29", durationEnd: "2026-05-20", crisisType: "Infrastructure" },
-  { id: "opp-5", opportunityId: "opp-5", title: "IT Support for Operations Center", ngoName: "TechCare India", description: "Set up and manage IT infrastructure at the relief operations center.", requiredSkills: ["IT"], totalVolunteers: 5, openPositions: 2, urgency: "medium", location: { address: "Paldi, Ahmedabad", lat: 23.0156, lng: 72.5726 }, durationStart: "2026-05-01", durationEnd: "2026-05-10", crisisType: "Operations" },
-];
+// No mock data: opportunities come from the database (VolunteerOpportunity collection)
+// populated by NGOs when they post volunteer openings.
 
 type AppStatus = "PENDING" | "APPROVED" | "REJECTED";
 type ApplicationMap = Record<string, AppStatus>;
@@ -51,7 +46,7 @@ export default function OpportunitiesPage() {
   const [filterUrgency, setFilterUrgency] = useState("all");
   const [filterSkill, setFilterSkill] = useState("all");
 
-  const volunteerId = getCookie("vb_volunteer_id") || "vol-101";
+  const volunteerId = getCookie("vb_volunteer_id") || "";
 
   useEffect(() => {
     const fetchData = async () => {
@@ -62,10 +57,10 @@ export default function OpportunitiesPage() {
           apiClient.getVolunteerApplications(volunteerId),
         ]);
 
-        if (oppData.status === "fulfilled" && oppData.value?.length > 0) {
-          setOpportunities(oppData.value);
+        if (oppData.status === "fulfilled") {
+          setOpportunities(oppData.value?.length > 0 ? oppData.value : []);
         } else {
-          setOpportunities(MOCK_OPPORTUNITIES);
+          setOpportunities([]);
         }
 
         if (appData.status === "fulfilled") {
@@ -76,7 +71,7 @@ export default function OpportunitiesPage() {
           setApplications(appMap);
         }
       } catch {
-        setOpportunities(MOCK_OPPORTUNITIES);
+        setOpportunities([]);
       } finally {
         setLoading(false);
       }
@@ -91,14 +86,14 @@ export default function OpportunitiesPage() {
         apiClient.getVolunteerOpportunities(),
         apiClient.getVolunteerApplications(volunteerId),
       ]);
-      if (oppData.status === "fulfilled" && oppData.value?.length > 0) setOpportunities(oppData.value);
-      else setOpportunities(MOCK_OPPORTUNITIES);
+      if (oppData.status === "fulfilled") setOpportunities(oppData.value?.length > 0 ? oppData.value : []);
+      else setOpportunities([]);
       if (appData.status === "fulfilled") {
         const appMap: ApplicationMap = {};
         (appData.value || []).forEach((app: any) => { appMap[app.opportunityId] = app.status; });
         setApplications(appMap);
       }
-    } catch { setOpportunities(MOCK_OPPORTUNITIES); }
+    } catch { setOpportunities([]); }
     finally { setLoading(false); }
   };
 

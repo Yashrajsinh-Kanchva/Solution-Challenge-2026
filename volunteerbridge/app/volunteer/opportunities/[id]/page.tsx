@@ -33,7 +33,7 @@ export default function OpportunityDetailPage() {
   const [showForm, setShowForm] = useState(false);
   const [message, setMessage] = useState("");
 
-  const volunteerId = getCookie("vb_volunteer_id") || "vol-101";
+  const volunteerId = getCookie("vb_volunteer_id") || "";
 
   useEffect(() => {
     const fetchData = async () => {

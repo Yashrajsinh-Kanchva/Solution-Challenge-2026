@@ -18,48 +18,59 @@ type ChecklistTask = {
   requestId: string;
 };
 
-const MOCK_TASKS: ChecklistTask[] = [
-  { id: "t-1", title: "Set up triage station", status: "Done", assignedTeam: "Team Alpha", requestTitle: "Flood Relief — Medical Support", requestId: "req-flood-001" },
-  { id: "t-2", title: "Conduct patient intake assessments", status: "In Progress", assignedTeam: "Team Alpha", requestTitle: "Flood Relief — Medical Support", requestId: "req-flood-001" },
-  { id: "t-3", title: "Coordinate with ambulance dispatch", status: "Not Started", assignedTeam: "Team Alpha", requestTitle: "Flood Relief — Medical Support", requestId: "req-flood-001" },
-  { id: "t-4", title: "Daily medical supply inventory check", status: "In Progress", assignedTeam: "Team Alpha", requestTitle: "Flood Relief — Medical Support", requestId: "req-flood-001" },
-];
+// ── No mock data: tasks come from live assignment records ──
 
 type StatusFilter = "all" | "Not Started" | "In Progress" | "Done";
 
+type AssignmentGroup = {
+  requestId: string;
+  requestTitle: string;
+  teamName: string;
+  status: string;
+  tasks: ChecklistTask[];
+};
+
 export default function MyTasksPage() {
-  const [tasks, setTasks] = useState<ChecklistTask[]>([]);
+  const [groups, setGroups] = useState<AssignmentGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const volunteerId = getCookie("vb_volunteer_id") || "vol-101";
+  const volunteerId = getCookie("vb_volunteer_id") || "";
 
   useEffect(() => {
+    if (!volunteerId) { setLoading(false); return; }
     const fetchData = async () => {
       setLoading(true);
       try {
         const assignments = await apiClient.getVolunteerAssignments(volunteerId);
-        if (assignments?.length > 0) {
-          const allTasks: ChecklistTask[] = assignments.flatMap((asgn: any) =>
-            (asgn.checklist || []).map((t: any) => ({
+        if (Array.isArray(assignments) && assignments.length > 0) {
+          const grps: AssignmentGroup[] = assignments.map((asgn: any) => ({
+            requestId:    asgn.requestId,
+            requestTitle: asgn.requestTitle || "Untitled Assignment",
+            teamName:     asgn.teamName    || "—",
+            status:       asgn.status      || "in_progress",
+            tasks: (asgn.checklist || []).map((t: any) => ({
               ...t,
-              requestTitle: asgn.requestTitle,
-              requestId: asgn.requestId,
-            }))
-          );
-          setTasks(allTasks.length > 0 ? allTasks : MOCK_TASKS);
+              assignedTeam:  asgn.teamName    || "—",
+              requestTitle:  asgn.requestTitle || "Untitled Assignment",
+              requestId:     asgn.requestId,
+            })),
+          }));
+          setGroups(grps);
         } else {
-          setTasks(MOCK_TASKS);
+          setGroups([]);
         }
       } catch {
-        setTasks(MOCK_TASKS);
+        setGroups([]);
       } finally {
         setLoading(false);
       }
     };
     fetchData();
   }, [volunteerId]);
+
+  const allTasks = groups.flatMap(g => g.tasks);
 
   const nextStatus = (current: string): "Not Started" | "In Progress" | "Done" => {
     if (current === "Not Started") return "In Progress";
@@ -76,22 +87,31 @@ export default function MyTasksPage() {
     } catch {
       showToast("Status saved locally — sync when online", "warning");
     }
-    setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: updated } : t));
+    // Update task within its group
+    setGroups(prev => prev.map(g =>
+      g.requestId === task.requestId
+        ? { ...g, tasks: g.tasks.map(t => t.id === task.id ? { ...t, status: updated } : t) }
+        : g
+    ));
     setUpdatingId(null);
   };
 
-  const filtered = useMemo(() =>
-    filter === "all" ? tasks : tasks.filter(t => t.status === filter),
-    [tasks, filter]
-  );
-
   const stats = {
-    total: tasks.length,
-    done: tasks.filter(t => t.status === "Done").length,
-    inProgress: tasks.filter(t => t.status === "In Progress").length,
-    notStarted: tasks.filter(t => t.status === "Not Started").length,
+    total:      allTasks.length,
+    done:       allTasks.filter(t => t.status === "Done").length,
+    inProgress: allTasks.filter(t => t.status === "In Progress").length,
+    notStarted: allTasks.filter(t => t.status === "Not Started").length,
   };
   const progress = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+
+  // Filter groups by status — groups with no matching tasks are hidden
+  const filteredGroups = useMemo(() =>
+    groups.map(g => ({
+      ...g,
+      tasks: filter === "all" ? g.tasks : g.tasks.filter(t => t.status === filter),
+    })).filter(g => g.tasks.length > 0),
+    [groups, filter]
+  );
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -134,7 +154,7 @@ export default function MyTasksPage() {
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-4xl font-black text-on-surface tracking-tight">My Task Checklist</h1>
-          <p className="text-secondary/60 font-medium mt-1">Track and update your personal task assignments.</p>
+          <p className="text-secondary/60 font-medium mt-1">Track and update your personal task assignments, grouped by assignment.</p>
         </div>
         <div className="px-5 py-2.5 bg-white border-2 border-outline/60 rounded-2xl shadow-sm text-xs font-black text-secondary/60 uppercase tracking-widest flex items-center gap-2">
           <CheckSquare size={16} />
@@ -187,60 +207,97 @@ export default function MyTasksPage() {
         ))}
       </div>
 
-      {/* Task List */}
-      {filtered.length > 0 ? (
-        <div className="space-y-4">
-          {filtered.map(task => (
-            <div
-              key={task.id}
-              className={`rounded-modern border-2 custom-shadow p-6 transition-all duration-300 group ${getStatusBg(task.status)}`}
-            >
-              <div className="flex items-center gap-5">
-                <div className="shrink-0">
-                  {getStatusIcon(task.status)}
-                </div>
-                <div className="flex-1">
-                  <p className={`text-base font-black ${task.status === "Done" ? "line-through text-secondary/40" : "text-on-surface"}`}>
-                    {task.title}
-                  </p>
-                  <div className="flex items-center gap-4 mt-1">
-                    <p className="text-[10px] font-bold text-secondary/50 uppercase tracking-widest">{task.assignedTeam}</p>
-                    <p className="text-[10px] font-bold text-primary/60 uppercase tracking-widest">{task.requestTitle}</p>
+      {/* Assignment-Grouped Task List */}
+      {filteredGroups.length > 0 ? (
+        <div className="space-y-8">
+          {filteredGroups.map(group => {
+            const grpDone  = group.tasks.filter(t => t.status === "Done").length;
+            const grpTotal = group.tasks.length;
+            const grpPct   = grpTotal > 0 ? Math.round((grpDone / grpTotal) * 100) : 0;
+            return (
+              <div key={group.requestId} className="bg-white rounded-modern border-2 border-outline/60 custom-shadow overflow-hidden">
+                {/* Assignment header */}
+                <div className="px-8 py-5 bg-surface-variant/10 border-b-2 border-outline/30 flex items-center justify-between">
+                  <div>
+                    <h3 className="font-black text-on-surface text-base">{group.requestTitle}</h3>
+                    <p className="text-xs font-bold text-secondary/50 mt-0.5">Team: {group.teamName}</p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="text-[9px] font-black text-secondary/40 uppercase tracking-widest">Progress</p>
+                      <p className="text-sm font-black text-primary">{grpDone}/{grpTotal} done</p>
+                    </div>
+                    <div className="w-24 h-2 bg-outline/20 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-700 ${grpPct === 100 ? "bg-green-500" : "bg-primary"}`}
+                        style={{ width: `${grpPct}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 shrink-0">
-                  <span className={`text-[10px] font-black px-3 py-1.5 rounded-xl border uppercase tracking-widest ${
-                    task.status === "Done" ? "bg-green-100 text-green-700 border-green-200" :
-                    task.status === "In Progress" ? "bg-orange-100 text-orange-700 border-orange-200" :
-                    "bg-gray-100 text-gray-600 border-gray-200"
-                  }`}>
-                    {task.status}
-                  </span>
-                  {task.status !== "Done" && (
-                    <button
-                      disabled={updatingId === task.id}
-                      onClick={() => handleUpdate(task)}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-on-surface text-white rounded-button text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all active:scale-95 disabled:opacity-50 shadow-md"
+
+                {/* Task rows */}
+                <div className="divide-y-2 divide-outline/20">
+                  {group.tasks.map(task => (
+                    <div
+                      key={task.id}
+                      className={`p-6 transition-all duration-300 ${task.status === "Done" ? "bg-green-50/40" : task.status === "In Progress" ? "bg-orange-50/30" : ""}`}
                     >
-                      {updatingId === task.id ? (
-                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <><Zap size={12} /> Mark as {nextStatus(task.status)}</>
-                      )}
-                    </button>
-                  )}
+                      <div className="flex items-center gap-5">
+                        <div className="shrink-0">
+                          {getStatusIcon(task.status)}
+                        </div>
+                        <div className="flex-1">
+                          <p className={`text-base font-black ${task.status === "Done" ? "line-through text-secondary/40" : "text-on-surface"}`}>
+                            {task.title || task.text || "Untitled task"}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-4 shrink-0">
+                          <span className={`text-[10px] font-black px-3 py-1.5 rounded-xl border uppercase tracking-widest ${
+                            task.status === "Done" ? "bg-green-100 text-green-700 border-green-200" :
+                            task.status === "In Progress" ? "bg-orange-100 text-orange-700 border-orange-200" :
+                            "bg-gray-100 text-gray-600 border-gray-200"
+                          }`}>
+                            {task.status}
+                          </span>
+                          {task.status !== "Done" && (
+                            <button
+                              disabled={updatingId === task.id}
+                              onClick={() => handleUpdate(task)}
+                              className="flex items-center gap-2 px-5 py-2.5 bg-on-surface text-white rounded-button text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all active:scale-95 disabled:opacity-50 shadow-md"
+                            >
+                              {updatingId === task.id ? (
+                                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <><Zap size={12} /> Mark as {nextStatus(task.status)}</>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="bg-white p-24 rounded-modern border-2 border-dashed border-outline/60 text-center space-y-4">
           <AlertTriangle size={56} className="mx-auto text-secondary/10" />
-          <h3 className="text-xl font-black text-secondary/40">No tasks match this filter</h3>
-          <button onClick={() => setFilter("all")} className="px-8 py-3 bg-primary text-white rounded-button font-black text-xs uppercase tracking-widest hover:bg-primary/90 transition-all">
-            Show All Tasks
-          </button>
+          <h3 className="text-xl font-black text-secondary/40">
+            {allTasks.length === 0 ? "No tasks yet" : "No tasks match this filter"}
+          </h3>
+          <p className="text-sm text-secondary/30 italic">
+            {allTasks.length === 0
+              ? "Once an NGO assigns you to a task, your checklist items will appear here."
+              : "Try a different filter."}
+          </p>
+          {allTasks.length > 0 && (
+            <button onClick={() => setFilter("all")} className="px-8 py-3 bg-primary text-white rounded-button font-black text-xs uppercase tracking-widest hover:bg-primary/90 transition-all">
+              Show All Tasks
+            </button>
+          )}
         </div>
       )}
     </div>

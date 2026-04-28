@@ -7,12 +7,21 @@ const roleLabels: Record<UserRole, string> = {
 	volunteer: "Volunteer",
 };
 
-export function formatDateLabel(value: string): string {
+export function formatDateLabel(value?: string | number | Date | null): string {
+	if (!value) {
+		return "N/A";
+	}
+
+	const date = new Date(value);
+	if (isNaN(date.getTime())) {
+		return "N/A";
+	}
+
 	return new Intl.DateTimeFormat("en-IN", {
 		day: "numeric",
 		month: "short",
 		year: "numeric",
-	}).format(new Date(value));
+	}).format(date);
 }
 
 export function formatRoleLabel(role: AppUser["role"]): string {

@@ -32,10 +32,28 @@ const getHeaders = (role = "admin") => {
 async function safeFetch(input: RequestInfo, init?: RequestInit): Promise<any> {
   try {
     const res = await fetch(input, init);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
+    if (!res.ok) {
+      let body: any = null;
+      try { body = await res.json(); } catch { /* ignore */ }
+      console.error(`Database API error ${res.status} for ${input}:`, body);
+      return null;
+    }
+    const data = await res.json();
+    
+    // Recursively or top-level filter arrays to remove nulls
+    if (Array.isArray(data)) {
+      return data.filter(Boolean);
+    }
+    if (data && typeof data === "object") {
+      for (const key in data) {
+        if (Array.isArray(data[key])) {
+          data[key] = data[key].filter(Boolean);
+        }
+      }
+    }
+    return data;
   } catch (error) {
-    console.error("Database API request failed:", error);
+    console.error("Database API request failed:", input, error);
     return null;
   }
 }
@@ -162,7 +180,7 @@ export const apiClient = {
   // Volunteer Assignments — teams, checklists, camp maps
   getVolunteerAssignments: async (volunteerId: string) => {
     const data = await safeFetch(`${API_BASE}/volunteers/${volunteerId}/assignments`, { headers: getHeaders("volunteer") });
-    return Array.isArray(data) ? data : data?.assignments ?? [];
+    return Array.isArray(data) ? data : [];
   },
 
   updateTaskStatus: async (requestId: string, taskId: string, status: string, volunteerId: string) => {
@@ -283,6 +301,7 @@ export const apiClient = {
     return (await safeFetch(`${API_BASE}/map-layers`, { headers: getHeaders() })) ?? {};
   },
 
+
   voteOnRequest: async (requestId: string, userId: string, voteType: "UPVOTE" | "DOWNVOTE") => {
     const res = await fetch(`${API_BASE}/requests/${requestId}/vote`, {
       method: "POST",
@@ -303,5 +322,12 @@ export const apiClient = {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || "Failed to verify");
     return data;
+
+  deleteRequest: async (requestId: string) => {
+    return await safeFetch(`${API_BASE}/admin/requests/${requestId}`, {
+      method: "DELETE",
+      headers: getHeaders("admin"),
+    });
+
   },
 };

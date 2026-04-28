@@ -74,8 +74,8 @@ export default function VolunteerDashboard() {
           </p>
         </div>
         <div className="flex gap-3">
-          <div className="bg-white px-5 py-3 rounded-2xl border-2 border-outline/60 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center text-primary font-black text-sm">
+          <div className="bg-white px-5 py-3 rounded-2xl border border-outline-light shadow-card flex items-center gap-3">
+            <div className="w-9 h-9 bg-primary-container rounded-full flex items-center justify-center text-primary font-black text-sm">
               {(volunteerProfile?.name || volunteerId).charAt(0).toUpperCase()}
             </div>
             <div>
@@ -94,7 +94,7 @@ export default function VolunteerDashboard() {
           { label: "Open Opportunities", value: opportunities.length, icon: Search, color: "bg-blue-500", trend: "Available" },
           { label: "Active Assignments", value: activeAssignments.length, icon: Activity, color: "bg-purple-500", trend: "Ongoing" },
         ].map((stat, i) => (
-          <div key={i} className="bg-white p-7 rounded-modern border-2 border-outline/60 custom-shadow hover:border-primary/40 transition-all group relative overflow-hidden">
+          <div key={i} className="bg-white p-7 rounded-modern border border-outline-light shadow-card hover:border-primary/40 hover:shadow-md transition-all group relative overflow-hidden">
             <div className="flex justify-between items-start relative z-10">
               <div className={`${stat.color} p-3 rounded-xl text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                 <stat.icon size={22} />
@@ -115,8 +115,8 @@ export default function VolunteerDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left: Open Opportunities Preview */}
         <div className="lg:col-span-8 space-y-6">
-          <div className="bg-white rounded-modern border-2 border-outline/60 custom-shadow overflow-hidden">
-            <div className="px-8 py-6 border-b-2 border-outline/40 flex justify-between items-center bg-surface-variant/10">
+          <div className="bg-white rounded-modern border border-outline-light shadow-card overflow-hidden">
+            <div className="px-8 py-6 border-b border-outline-light flex justify-between items-center bg-surface-2">
               <h2 className="text-xl font-black text-on-surface flex items-center gap-3">
                 <Search size={22} className="text-primary" />
                 Open Opportunities

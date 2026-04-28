@@ -56,25 +56,28 @@ export default function NeedsPage() {
     }
   };
 
-  // Computed stats
-  const stats = useMemo(() => ({
-    total:    requests.length,
-    pending:  requests.filter(r => r.status === "pending").length,
-    approved: requests.filter(r => r.status === "approved").length,
-    rejected: requests.filter(r => r.status === "rejected").length,
-  }), [requests]);
+  // Stats — treat both DB status "pending_admin" and legacy "pending" as pending
+  const stats = useMemo(() => {
+    const validRequests = requests.filter(Boolean);
+    return {
+      total:    validRequests.length,
+      pending:  validRequests.filter(r => r.status === "pending" || r.status === "pending_admin").length,
+      approved: validRequests.filter(r => r.status === "approved").length,
+      rejected: validRequests.filter(r => r.status === "rejected").length,
+    };
+  }, [requests]);
 
   // Filtered list
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return requests.filter(r => {
+    return requests.filter(Boolean).filter(r => {
       if (statusF   !== "all" && r.status   !== statusF)   return false;
       if (categoryF !== "all" && r.category !== categoryF) return false;
       if (urgencyF  !== "all" && r.urgency  !== urgencyF)  return false;
       if (typeF     !== "all" && (r.requestType || "ISSUE") !== typeF) return false;
-      if (q && !r.title.toLowerCase().includes(q) &&
-               !r.requestedBy.toLowerCase().includes(q) &&
-               !r.location.toLowerCase().includes(q))      return false;
+      if (q && !r.title?.toLowerCase().includes(q) &&
+               !r.requestedBy?.toLowerCase().includes(q) &&
+               !r.location?.toLowerCase().includes(q))      return false;
       return true;
     });
   }, [requests, search, statusF, categoryF, urgencyF, typeF]);
@@ -83,17 +86,37 @@ export default function NeedsPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const newReq = await apiClient.createRequest({
-        ...formState,
+      const dbReq = await apiClient.createRequest({
+        title: formState.title,
+        category: formState.category,
+        location: formState.location,
+        urgency: formState.urgency,
+        userId: formState.requestedBy,
+        description: formState.summary,
         beneficiaries: Number(formState.beneficiaries),
         status: "pending",
         createdAt: new Date().toISOString(),
       });
+
+      if (!dbReq) {
+        throw new Error("Failed to create request");
+      }
+
+      const newReq = {
+        ...dbReq,
+        id: dbReq.requestId || dbReq.id,
+        requestedBy: dbReq.userId || formState.requestedBy,
+        summary: dbReq.description || formState.summary,
+        status: "pending",
+        beneficiaries: Number(formState.beneficiaries),
+        createdAt: new Date().toISOString().slice(0, 10),
+      };
+
       setRequests(cur => [newReq, ...cur]);
       setFormState(DEFAULT_FORM);
       setShowForm(false);
     } catch {
-      alert("Failed to create request.");
+      alert("Failed to create request. Please ensure all fields are valid.");
     } finally {
       setSubmitting(false);
     }
@@ -108,9 +131,14 @@ export default function NeedsPage() {
     }
   };
 
-  const onDelete = (id: string) => {
+  const onDelete = async (id: string) => {
     if (!confirm("Delete this request permanently?")) return;
-    setRequests(cur => cur.filter(r => r.id !== id));
+    try {
+      await apiClient.deleteRequest(id);
+      setRequests(cur => cur.filter(r => r.id !== id));
+    } catch {
+      alert("Failed to delete request.");
+    }
   };
 
   const onExport = () => {

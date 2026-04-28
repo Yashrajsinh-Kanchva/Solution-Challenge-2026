@@ -6,26 +6,12 @@ import { getCookie } from "@/lib/utils/cookies";
 import {
   UserCircle, MapPin, Phone, Mail,
   Zap, CheckCircle, Edit3, Save, X,
-  Star, Award, Clock, ToggleLeft
+  Star, Award, Clock,
 } from "lucide-react";
 import ToastContainer, { showToast } from "@/components/volunteer/ToastContainer";
 
 const SKILL_OPTIONS = ["Medical", "Food Supply", "Logistics", "Construction", "Counseling", "IT", "Other"];
 
-const MOCK_PROFILE = {
-  volunteerId: "vol-101",
-  name: "Rahul Sharma",
-  email: "rahul.sharma@example.com",
-  phone: "+91 98765 43210",
-  skills: ["Medical", "Logistics"],
-  location: { address: "Bopal, Ahmedabad", lat: 23.0225, lng: 72.5714 },
-  availability: true,
-  bio: "Passionate about community service with 3+ years of experience in disaster relief. Trained first-aider and logistics coordinator.",
-  pastWork: [
-    { title: "Cyclone Biparjoy Relief", ngo: "Sahyog NGO", year: "2023", role: "Medical Volunteer" },
-    { title: "COVID Vaccination Drive", ngo: "Health India", year: "2021", role: "Logistics Coordinator" },
-  ],
-};
 
 export default function VolunteerProfilePage() {
   const [profile, setProfile] = useState<any>(null);
@@ -34,20 +20,29 @@ export default function VolunteerProfilePage() {
   const [form, setForm] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const volunteerId = getCookie("vb_volunteer_id") || "vol-101";
+  const volunteerId = getCookie("vb_volunteer_id") || "";
 
   useEffect(() => {
     const fetchProfile = async () => {
       setLoading(true);
+      if (!volunteerId) {
+        // No session — show empty form
+        const empty = { volunteerId: "", name: "", email: "", phone: "", skills: [], location: { address: "" }, availability: true, bio: "", pastWork: [] };
+        setProfile(empty);
+        setForm({ ...empty });
+        setLoading(false);
+        return;
+      }
       try {
         const data = await apiClient.getVolunteer(volunteerId);
-        const p = data || { ...MOCK_PROFILE, volunteerId };
+        // If no record exists yet, start with a blank editable form
+        const p = data || { volunteerId, name: "", email: "", phone: "", skills: [], location: { address: "" }, availability: true, bio: "", pastWork: [] };
         setProfile(p);
         setForm({ ...p });
       } catch {
-        const p = { ...MOCK_PROFILE, volunteerId };
-        setProfile(p);
-        setForm({ ...p });
+        const empty = { volunteerId, name: "", email: "", phone: "", skills: [], location: { address: "" }, availability: true, bio: "", pastWork: [] };
+        setProfile(empty);
+        setForm({ ...empty });
       } finally {
         setLoading(false);
       }

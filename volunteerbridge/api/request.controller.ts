@@ -163,12 +163,15 @@ export async function updateRequestChecklist(req: AuthenticatedRequest, res: Res
     const { requestId } = req.params;
     const { checklist } = req.body as { checklist: any[] };
 
-    if (!checklist) {
-      res.status(400).json({ error: "checklist is required" });
+    if (!checklist || !Array.isArray(checklist)) {
+      res.status(400).json({ error: "checklist must be an array" });
       return;
     }
 
-    await dbRef(`Request/${requestId}`).update({ checklist });
+    // Write directly to the checklist sub-path with .set() — NOT .update() on the parent.
+    // Using .update({checklist}) on the Request node causes Firebase RTDB to store the array
+    // as a keyed object {"0":{...},"1":{...}} instead of a proper array, breaking findIndex.
+    await dbRef(`Request/${requestId}/checklist`).set(checklist);
 
     res.status(200).json({ message: "Request checklist updated", requestId });
   } catch (error) {

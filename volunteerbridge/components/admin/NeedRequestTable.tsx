@@ -15,9 +15,10 @@ type Props = {
 };
 
 const URGENCY_COLOR: Record<string, string> = {
-  high:   "background:#fef2f2;color:#ba1a1a;border:1px solid #fecaca",
-  medium: "background:#fffbeb;color:#b45309;border:1px solid #fde68a",
-  low:    "background:#f0fdf4;color:#2e7d32;border:1px solid #bbf7d0",
+  critical: "background:#FDECEA;color:#A81919;border:1.5px solid #F1A8A8",
+  high:     "background:#FDECEA;color:#A81919;border:1.5px solid #F1A8A8",
+  medium:   "background:#FEF6E7;color:#92540A;border:1.5px solid #F5C87A",
+  low:      "background:#EAF5EB;color:#2E6B32;border:1.5px solid #A8D5AB",
 };
 
 export default function NeedRequestTable({ requests, onStatusChange, onDelete, ngos = [], onAssignNgo }: Props) {
@@ -184,9 +185,9 @@ export default function NeedRequestTable({ requests, onStatusChange, onDelete, n
                   <tr key={`${req.id}-detail`}>
                     <td colSpan={9} style={{ padding:0 }}>
                       <div style={{
-                        background:"#f6f3ed",
-                        borderTop:"1px solid #e8edca",
-                        borderBottom:"1px solid #e8edca",
+                        background:"#F7F5EE",
+                        borderTop:"1.5px solid #E8EDD0",
+                        borderBottom:"1.5px solid #E8EDD0",
                         padding:"1.25rem 1.5rem",
                         display:"grid",
                         gridTemplateColumns:"1fr 1fr 1fr",

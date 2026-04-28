@@ -194,9 +194,9 @@ export default function NgoMapView({
                         <div key={vol.volunteerId} className="flex items-center justify-between p-2 bg-surface-variant/20 rounded-lg border border-outline/30 hover:border-primary/40 transition-all group">
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center text-[9px] font-black text-primary border border-outline/60">
-                              {vol.name[0]}
+                              {(vol.name || vol.volunteerId || "V")[0].toUpperCase()}
                             </div>
-                            <span className="text-xs font-bold text-on-surface">{vol.name}</span>
+                            <span className="text-xs font-bold text-on-surface">{vol.name || vol.volunteerId}</span>
                           </div>
                           <button 
                             disabled={assigning === vol.volunteerId}

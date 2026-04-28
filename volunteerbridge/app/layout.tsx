@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+// UI Redesign Build: 2026-04-28_01
 import "./globals.css";
 
 export const metadata: Metadata = {

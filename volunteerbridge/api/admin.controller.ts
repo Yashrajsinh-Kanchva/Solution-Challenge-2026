@@ -229,10 +229,66 @@ export async function createAssignment(req: AuthenticatedRequest, res: Response)
 
 export async function getAnalytics(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
-    const snapshot = await dbRef("Analytics").once("value");
-    res.status(200).json(snapshot.exists() ? snapshot.val() : {});
+    // Compute analytics live from the source collections instead of relying on a static Analytics node
+    const [ngoSnap, volunteerSnap, requestSnap] = await Promise.all([
+      dbRef("NGO").once("value"),
+      dbRef("Volunteer").once("value"),
+      dbRef("Request").once("value"),
+    ]);
+
+    const ngos      = ngoSnap.exists()      ? Object.values(ngoSnap.val()      as Record<string, any>) : [];
+    const volunteers= volunteerSnap.exists() ? Object.values(volunteerSnap.val() as Record<string, any>) : [];
+    const requests  = requestSnap.exists()   ? Object.values(requestSnap.val()   as Record<string, any>) : [];
+
+    // ── Need category analytics ──
+    const catCounts: Record<string, number> = {};
+    requests.forEach((r: any) => {
+      const cat = r.category || r.aiCategory || "Other";
+      catCounts[cat] = (catCounts[cat] || 0) + 1;
+    });
+    const needCategoryAnalytics = Object.entries(catCounts).map(([category, needs]) => ({ category, needs }));
+
+    // ── Volunteer deployment stats by zone / location ──
+    const zoneCounts: Record<string, { deployed: number; target: number }> = {};
+    volunteers.forEach((v: any) => {
+      const zone = typeof v.location === "string"
+        ? v.location.split(",")[0].trim()
+        : v.location?.address?.split(",")[0]?.trim() || "General";
+      if (!zoneCounts[zone]) zoneCounts[zone] = { deployed: 0, target: 0 };
+      if (v.availability || v.status === "idle") zoneCounts[zone].deployed += 1;
+      zoneCounts[zone].target += 1;
+    });
+    const volunteerDeploymentStats = Object.entries(zoneCounts)
+      .slice(0, 6)
+      .map(([zone, { deployed, target }]) => ({ zone, deployed, target }));
+
+    // ── NGO activity levels ──
+    const ngoActivity: Record<string, { tasksCompleted: number; activeRequests: number }> = {};
+    requests.forEach((r: any) => {
+      if (!r.assignedNgoId) return;
+      if (!ngoActivity[r.assignedNgoId]) ngoActivity[r.assignedNgoId] = { tasksCompleted: 0, activeRequests: 0 };
+      const s = (r.status || "").toLowerCase();
+      if (s === "completed") ngoActivity[r.assignedNgoId].tasksCompleted += 1;
+      else ngoActivity[r.assignedNgoId].activeRequests += 1;
+    });
+    const ngoActivityLevels = Object.entries(ngoActivity).map(([ngoId, stats]) => {
+      const ngo = ngos.find((n: any) => (n.ngoId || n.id) === ngoId);
+      return {
+        ngo: ngo?.ngoName || ngo?.name || ngoId,
+        tasksCompleted: stats.tasksCompleted,
+        activeRequests: stats.activeRequests,
+      };
+    });
+
+    // ── Role breakdown ──
+    const roleBreakdown = [
+      { role: "ngo",       total: ngos.length,       active: ngos.filter((n: any) => n.status === "approved").length,                    pending: ngos.filter((n: any) => n.status === "pending").length },
+      { role: "volunteer", total: volunteers.length,  active: volunteers.filter((v: any) => v.availability || v.status === "idle").length, pending: volunteers.filter((v: any) => v.status === "pending").length },
+    ];
+
+    res.status(200).json({ needCategoryAnalytics, volunteerDeploymentStats, ngoActivityLevels, roleBreakdown });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch analytics", details: (error as Error).message });
+    res.status(500).json({ error: "Failed to compute analytics", details: (error as Error).message });
   }
 }
 
@@ -242,5 +298,33 @@ export async function getMapLayers(req: AuthenticatedRequest, res: Response): Pr
     res.status(200).json(snapshot.exists() ? snapshot.val() : {});
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch map layers", details: (error as Error).message });
+  }
+}
+
+// B2 fix: Real persistent delete for a request (admin only)
+export async function deleteRequest(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const { requestId } = req.params;
+    const snap = await dbRef(`Request/${requestId}`).once("value");
+    if (!snap.exists()) {
+      res.status(404).json({ error: "Request not found" });
+      return;
+    }
+    // Free up any assigned volunteers before deleting
+    const request = snap.val() as any;
+    const volunteerIds: string[] = request.assignedVolunteerIds || [];
+    if (volunteerIds.length > 0) {
+      const updates: Record<string, any> = {};
+      volunteerIds.forEach(id => {
+        updates[`Volunteer/${id}/status`] = "idle";
+        updates[`Volunteer/${id}/availability`] = true;
+        updates[`Volunteer/${id}/currentRequestId`] = null;
+      });
+      await dbRef("/").update(updates);
+    }
+    await dbRef(`Request/${requestId}`).remove();
+    res.status(200).json({ message: "Request deleted", requestId });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete request", details: (error as Error).message });
   }
 }

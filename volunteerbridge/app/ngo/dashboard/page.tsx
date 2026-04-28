@@ -13,12 +13,19 @@ import {
 export default function NgoDashboard() {
   const router = useRouter();
   const [stats, setStats] = useState<any>(null);
+  const [ngoName, setNgoName] = useState("");
   const [loading, setLoading] = useState(true);
   const ngoId = getCookie("vb_ngo_id") || "ngo-1";
 
   useEffect(() => {
-    apiClient.getNgoStats(ngoId)
-      .then(setStats)
+    Promise.all([
+      apiClient.getNgoStats(ngoId),
+      apiClient.getNgo(ngoId),
+    ])
+      .then(([statsData, ngoData]) => {
+        setStats(statsData);
+        setNgoName(ngoData?.ngoName || ngoData?.name || ngoId);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [ngoId]);
@@ -41,13 +48,13 @@ export default function NgoDashboard() {
           <h1 className="text-4xl font-black text-on-surface tracking-tight">Dashboard</h1>
           <p className="text-secondary/60 font-medium mt-1">Track your team and manage emergency requests.</p>
         </div>
-        <div className="bg-white px-6 py-3 rounded-2xl border-2 border-outline/60 shadow-sm flex items-center gap-4">
-          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-black">
-            {ngoId.charAt(0).toUpperCase()}
+        <div className="bg-white px-6 py-3 rounded-2xl border border-outline-light shadow-card flex items-center gap-4">
+          <div className="w-10 h-10 bg-primary-container rounded-full flex items-center justify-center text-primary font-black">
+            {(ngoName || ngoId).charAt(0).toUpperCase()}
           </div>
           <div>
             <p className="text-[10px] font-black text-secondary/40 uppercase tracking-widest leading-none mb-1">Organization</p>
-            <p className="text-sm font-bold text-on-surface">{ngoId}</p>
+            <p className="text-sm font-bold text-on-surface">{ngoName || ngoId}</p>
           </div>
         </div>
       </div>
@@ -60,7 +67,7 @@ export default function NgoDashboard() {
           { label: "Completed", value: stats.completedTasks, icon: CheckCircle, color: "bg-green-600", trend: "Done" },
           { label: "Volunteers", value: stats.availableVolunteers, icon: Users, color: "bg-green-500", trend: "Ready" },
         ].map((stat, i) => (
-          <div key={i} className="bg-white p-7 rounded-modern border-2 border-outline/60 custom-shadow hover:border-primary/40 transition-all group relative overflow-hidden">
+          <div key={i} className="bg-white p-7 rounded-modern border border-outline-light shadow-card hover:border-primary/40 hover:shadow-md transition-all group relative overflow-hidden">
             <div className="flex justify-between items-start relative z-10">
               <div className={`${stat.color} p-3 rounded-xl text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                 <stat.icon size={22} />
@@ -82,8 +89,8 @@ export default function NgoDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Recent Activity Feed */}
         <div className="lg:col-span-8 space-y-6">
-          <div className="bg-white rounded-modern border-2 border-outline/60 custom-shadow overflow-hidden">
-            <div className="px-8 py-6 border-b-2 border-outline/40 flex justify-between items-center bg-surface-variant/10">
+          <div className="bg-white rounded-modern border border-outline-light shadow-card overflow-hidden">
+            <div className="px-8 py-6 border-b border-outline-light flex justify-between items-center bg-surface-2">
               <h2 className="text-xl font-black text-on-surface flex items-center gap-3">
                 <Clock size={22} className="text-primary" />
                 Recent Activity
@@ -140,7 +147,7 @@ export default function NgoDashboard() {
         {/* Right Sidebar: Resources & Volunteer Insights */}
         <div className="lg:col-span-4 space-y-8">
           {/* Resource Summary */}
-          <div className="bg-white p-8 rounded-modern border-2 border-outline/60 custom-shadow">
+          <div className="bg-white p-8 rounded-modern border border-outline-light shadow-card">
             <h3 className="text-xs font-black text-on-surface uppercase tracking-widest mb-8 flex items-center gap-2">
               <Package size={18} className="text-primary" />
               Inventory Status

@@ -10,7 +10,7 @@ import {
   voteOnRequest,
   verifyRequest
 } from "@/api/request.controller";
-import { approveRequest, assignNgoForRequest, getAllNgos, approveNgo, getDashboardStats, getAllUsers, getAssignments, createAssignment, getAnalytics, getMapLayers } from "@/api/admin.controller";
+import { approveRequest, assignNgoForRequest, getAllNgos, approveNgo, getDashboardStats, getAllUsers, getAssignments, createAssignment, getAnalytics, getMapLayers, deleteRequest } from "@/api/admin.controller";
 import { getAssignedRequestsForNgo, updateNgoResources, getNgoDashboardStats, getNgoVolunteers, assignResourcesToRequest, getNgoById, registerNgo, getVolunteerJoinRequests, handleVolunteerJoinRequest } from "@/api/ngo.controller";
 import { assignVolunteer, unassignVolunteer, updateVolunteerStatus, getVolunteerById, getAllVolunteers, submitJoinRequest, getVolunteerJoinRequestsByVolunteerId, getVolunteerOpportunities, getVolunteerOpportunityById, applyToOpportunity, getVolunteerApplications, getVolunteerAssignments, updateChecklistTaskStatus, updateVolunteerProfile } from "@/api/volunteer.controller";
 import { getPredictions } from "@/api/prediction.controller";
@@ -41,6 +41,7 @@ apiRouter.post("/requests/:requestId/checklist", requireRoles(["ngo", "admin"]),
 
 apiRouter.post("/admin/requests/:requestId/approve", requireRoles(["admin"]), approveRequest);
 apiRouter.post("/admin/requests/:requestId/assign-ngo", requireRoles(["admin"]), assignNgoForRequest);
+apiRouter.delete("/admin/requests/:requestId", requireRoles(["admin"]), deleteRequest);
 
 apiRouter.post("/requests/:requestId/vote", requireRoles(["citizen", "admin", "ngo", "volunteer"]), voteOnRequest);
 apiRouter.post("/requests/:requestId/verify", requireRoles(["citizen", "admin", "ngo", "volunteer"]), verifyRequest);

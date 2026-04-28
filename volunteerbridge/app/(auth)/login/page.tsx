@@ -162,7 +162,7 @@ export default function LoginPage() {
   /* ── NGO Registration Screen ── */
   if (showRegistration) {
     return (
-      <section className="bg-white rounded-modern border-2 border-outline/60 p-12 custom-shadow w-full max-w-xl animate-in zoom-in duration-500">
+      <section className="bg-white rounded-modern border border-outline-light p-12 shadow-card w-full max-w-xl animate-in zoom-in duration-500">
         <div className="flex items-center gap-4 mb-8">
           <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
             <ShieldCheck size={28} strokeWidth={2.5} />
@@ -176,26 +176,26 @@ export default function LoginPage() {
           <div className="grid grid-cols-2 gap-5">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-on-surface uppercase tracking-widest ml-1">NGO Name</label>
-              <input required value={ngoForm.ngoName} onChange={e => setNgoForm({...ngoForm, ngoName: e.target.value})} placeholder="e.g. Hope Foundation" className="w-full px-5 py-3.5 bg-surface-variant/20 border-2 border-outline/60 rounded-xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-inner" />
+              <input required value={ngoForm.ngoName} onChange={e => setNgoForm({...ngoForm, ngoName: e.target.value})} placeholder="e.g. Hope Foundation" className="w-full px-5 py-3.5 bg-surface-2 border border-outline-light rounded-xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-card" />
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black text-on-surface uppercase tracking-widest ml-1">Area of Operations</label>
-              <input required value={ngoForm.area} onChange={e => setNgoForm({...ngoForm, area: e.target.value})} placeholder="e.g. Gujarat Region" className="w-full px-5 py-3.5 bg-surface-variant/20 border-2 border-outline/60 rounded-xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-inner" />
+              <input required value={ngoForm.area} onChange={e => setNgoForm({...ngoForm, area: e.target.value})} placeholder="e.g. Gujarat Region" className="w-full px-5 py-3.5 bg-surface-2 border border-outline-light rounded-xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-card" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-5">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-on-surface uppercase tracking-widest ml-1">Email Domain</label>
-              <input type="email" required value={ngoForm.email} onChange={e => setNgoForm({...ngoForm, email: e.target.value})} placeholder="official@ngo.org" className="w-full px-5 py-3.5 bg-surface-variant/20 border-2 border-outline/60 rounded-xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-inner" />
+              <input type="email" required value={ngoForm.email} onChange={e => setNgoForm({...ngoForm, email: e.target.value})} placeholder="official@ngo.org" className="w-full px-5 py-3.5 bg-surface-2 border border-outline-light rounded-xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-card" />
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black text-on-surface uppercase tracking-widest ml-1">Main Coordinator</label>
-              <input required value={ngoForm.contactName} onChange={e => setNgoForm({...ngoForm, contactName: e.target.value})} placeholder="Contact name" className="w-full px-5 py-3.5 bg-surface-variant/20 border-2 border-outline/60 rounded-xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-inner" />
+              <input required value={ngoForm.contactName} onChange={e => setNgoForm({...ngoForm, contactName: e.target.value})} placeholder="Contact name" className="w-full px-5 py-3.5 bg-surface-2 border border-outline-light rounded-xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-card" />
             </div>
           </div>
           <div className="space-y-2">
             <label className="text-[10px] font-black text-on-surface uppercase tracking-widest ml-1">Strategic Mission</label>
-            <textarea required value={ngoForm.mission} onChange={e => setNgoForm({...ngoForm, mission: e.target.value})} placeholder="Describe your organization's core objectives..." rows={4} className="w-full px-5 py-3.5 bg-surface-variant/20 border-2 border-outline/60 rounded-xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-inner resize-none" />
+            <textarea required value={ngoForm.mission} onChange={e => setNgoForm({...ngoForm, mission: e.target.value})} placeholder="Describe your organization's core objectives..." rows={4} className="w-full px-5 py-3.5 bg-surface-2 border border-outline-light rounded-xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-card resize-none" />
           </div>
           <div className="flex gap-4 pt-6 border-t border-outline/30 mt-8">
             <button type="submit" disabled={submitting} className="flex-1 py-4 bg-primary text-white rounded-button font-black text-xs uppercase tracking-widest hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 active:scale-95 disabled:opacity-50">
@@ -213,7 +213,7 @@ export default function LoginPage() {
   /* ── Volunteer Join Screen ── */
   if (showVolunteerJoin) {
     return (
-      <section className="bg-white rounded-modern border-2 border-outline/60 p-12 custom-shadow w-full max-w-xl animate-in zoom-in duration-500">
+      <section className="bg-white rounded-modern border border-outline-light p-12 shadow-card w-full max-w-xl animate-in zoom-in duration-500">
         <div className="flex items-center gap-4 mb-8">
           <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
             <Plus size={28} strokeWidth={2.5} />
@@ -226,21 +226,21 @@ export default function LoginPage() {
         <form onSubmit={handleVolunteerJoin} className="space-y-5">
           <div className="space-y-2">
             <label className="text-[10px] font-black text-on-surface uppercase tracking-widest ml-1">Your Full Name</label>
-            <input required value={volunteerForm.name} onChange={e => setVolunteerForm({...volunteerForm, name: e.target.value})} placeholder="e.g. Rahul Sharma" className="w-full px-5 py-3.5 bg-surface-variant/20 border-2 border-outline/60 rounded-xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-inner" />
+            <input required value={volunteerForm.name} onChange={e => setVolunteerForm({...volunteerForm, name: e.target.value})} placeholder="e.g. Rahul Sharma" className="w-full px-5 py-3.5 bg-surface-2 border border-outline-light rounded-xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-card" />
           </div>
           <div className="grid grid-cols-2 gap-5">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-on-surface uppercase tracking-widest ml-1">Email Address</label>
-              <input type="email" required value={volunteerForm.email} onChange={e => setVolunteerForm({...volunteerForm, email: e.target.value})} placeholder="rahul@example.com" className="w-full px-5 py-3.5 bg-surface-variant/20 border-2 border-outline/60 rounded-xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-inner" />
+              <input type="email" required value={volunteerForm.email} onChange={e => setVolunteerForm({...volunteerForm, email: e.target.value})} placeholder="rahul@example.com" className="w-full px-5 py-3.5 bg-surface-2 border border-outline-light rounded-xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-card" />
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black text-on-surface uppercase tracking-widest ml-1">Phone Number</label>
-              <input required value={volunteerForm.phone} onChange={e => setVolunteerForm({...volunteerForm, phone: e.target.value})} placeholder="+91 XXXXX XXXXX" className="w-full px-5 py-3.5 bg-surface-variant/20 border-2 border-outline/60 rounded-xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-inner" />
+              <input required value={volunteerForm.phone} onChange={e => setVolunteerForm({...volunteerForm, phone: e.target.value})} placeholder="+91 XXXXX XXXXX" className="w-full px-5 py-3.5 bg-surface-2 border border-outline-light rounded-xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-card" />
             </div>
           </div>
           <div className="space-y-2">
             <label className="text-[10px] font-black text-on-surface uppercase tracking-widest ml-1">Skills (comma separated)</label>
-            <input required value={volunteerForm.skills} onChange={e => setVolunteerForm({...volunteerForm, skills: e.target.value})} placeholder="e.g. First Aid, Driving, Logistics" className="w-full px-5 py-3.5 bg-surface-variant/20 border-2 border-outline/60 rounded-xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-inner" />
+            <input required value={volunteerForm.skills} onChange={e => setVolunteerForm({...volunteerForm, skills: e.target.value})} placeholder="e.g. First Aid, Driving, Logistics" className="w-full px-5 py-3.5 bg-surface-2 border border-outline-light rounded-xl text-sm font-bold focus:border-primary focus:bg-white outline-none transition-all shadow-card" />
           </div>
           <div className="space-y-2">
             <label className="text-[10px] font-black text-on-surface uppercase tracking-widest ml-1">Select Organization</label>
@@ -281,10 +281,11 @@ export default function LoginPage() {
               {roleOptions.map(r => (
                 <button key={r} type="button" onClick={() => setRole(r)} style={{
                   ...roleBtn,
-                  background:  role === r ? "#dce4b8" : "#fff",
-                  borderColor: role === r ? "#59623c" : "#ccd6a6",
+                  background:  role === r ? "#EEF3D2" : "#FAFAF7",
+                  borderColor: role === r ? "#4D5A2C" : "#D4DCA8",
                   fontWeight:  role === r ? 700 : 500,
-                  boxShadow:   role === r ? "0 0 0 3px rgba(89,98,60,0.15)" : "none",
+                  color:       role === r ? "#1A1C15" : "#6B7160",
+                  boxShadow:   role === r ? "0 0 0 3px rgba(77,90,44,0.12)" : "none",
                 }}>
                   {ROLE_LABELS[r]}
                   {role === r && <CheckCircle2 size={14} color="#59623c" style={{ marginLeft: "auto" }} />}
@@ -437,15 +438,16 @@ export default function LoginPage() {
 }
 
 /* ── Styles ── */
-const shell: React.CSSProperties        = { minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"#FCF9F3", padding:"1rem" };
-const card: React.CSSProperties         = { background:"#fff", border:"2px solid #ccd6a6", borderRadius:"20px", padding:"2.5rem 2rem", width:"min(500px,100%)", boxShadow:"0 18px 40px -20px rgba(89,98,60,0.2)" };
-const logoBox: React.CSSProperties      = { width:"52px", height:"52px", borderRadius:"16px", background:"#59623c", display:"inline-flex", alignItems:"center", justifyContent:"center", marginBottom:"0.75rem", boxShadow:"0 12px 24px -16px rgba(89,98,60,0.45)" };
-const heading: React.CSSProperties      = { fontSize:"1.5rem", fontWeight:900, color:"#1c1c18", letterSpacing:"-0.025em", margin:"0 0 0.35rem" };
-const subtext: React.CSSProperties      = { color:"#46483e", fontSize:"0.875rem" };
-const labelStyle: React.CSSProperties   = { display:"block", fontWeight:700, fontSize:"0.82rem", color:"#1c1c18", marginBottom:"0.6rem" };
+const shell: React.CSSProperties        = { minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"#F7F5EE", padding:"1rem" };
+const card: React.CSSProperties         = { background:"#fff", border:"1.5px solid #E8EDD0", borderRadius:"20px", padding:"2.75rem 2.25rem", width:"min(500px,100%)", boxShadow:"0 4px 16px rgba(45,55,20,0.08), 0 20px 48px rgba(45,55,20,0.10)" };
+const logoBox: React.CSSProperties      = { width:"52px", height:"52px", borderRadius:"14px", background:"#4D5A2C", display:"inline-flex", alignItems:"center", justifyContent:"center", marginBottom:"0.75rem", boxShadow:"0 8px 20px rgba(77,90,44,0.35)" };
+const heading: React.CSSProperties      = { fontSize:"1.55rem", fontWeight:900, color:"#1A1C15", letterSpacing:"-0.03em", margin:"0 0 0.35rem" };
+const subtext: React.CSSProperties      = { color:"#6B7160", fontSize:"0.875rem" };
+const labelStyle: React.CSSProperties   = { display:"block", fontWeight:700, fontSize:"0.78rem", color:"#404535", marginBottom:"0.6rem", textTransform:"uppercase", letterSpacing:"0.08em" };
 const roleGrid: React.CSSProperties     = { display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.5rem" };
-const roleBtn: React.CSSProperties      = { border:"2px solid", borderRadius:"10px", padding:"0.65rem 0.9rem", fontSize:"0.85rem", cursor:"pointer", transition:"all 0.18s", display:"flex", alignItems:"center", gap:"0.4rem", fontFamily:"'Public Sans', sans-serif" };
-const selectStyle: React.CSSProperties  = { width:"100%", border:"2px solid #ccd6a6", borderRadius:"10px", padding:"0.75rem 1rem", fontSize:"0.875rem", color:"#1c1c18", background:"#fff", outline:"none", fontFamily:"'Public Sans', sans-serif", cursor:"pointer" };
-const previewChip: React.CSSProperties  = { marginTop:"0.6rem", display:"flex", alignItems:"center", gap:"0.5rem", background:"#f6f3ed", border:"1px solid #ccd6a6", borderRadius:"10px", padding:"0.6rem 0.9rem", fontSize:"0.82rem", color:"#1c1c18" };
-const loadingBox: React.CSSProperties   = { display:"flex", alignItems:"center", gap:"0.5rem", color:"#6b7466", fontSize:"0.85rem", padding:"0.75rem", background:"#f6f3ed", borderRadius:"10px", border:"1px solid #ccd6a6" };
-const submitBtn: React.CSSProperties    = { width:"100%", padding:"0.9rem", background:"#59623c", color:"#fff", border:"none", borderRadius:"12px", fontWeight:800, fontSize:"0.95rem", display:"flex", alignItems:"center", justifyContent:"center", gap:"0.5rem", cursor:"pointer", fontFamily:"'Public Sans', sans-serif", boxShadow:"0 16px 32px -18px rgba(89,98,60,0.5)", transition:"all 0.2s" };
+const roleBtn: React.CSSProperties      = { border:"1.5px solid", borderRadius:"10px", padding:"0.7rem 1rem", fontSize:"0.875rem", cursor:"pointer", transition:"all 0.18s", display:"flex", alignItems:"center", gap:"0.4rem", fontFamily:"'Public Sans', sans-serif" };
+const selectStyle: React.CSSProperties  = { width:"100%", border:"1.5px solid #D4DCA8", borderRadius:"10px", padding:"0.75rem 1rem", fontSize:"0.875rem", color:"#1A1C15", background:"#FAFAF7", outline:"none", fontFamily:"'Public Sans', sans-serif", cursor:"pointer" };
+const previewChip: React.CSSProperties  = { marginTop:"0.6rem", display:"flex", alignItems:"center", gap:"0.5rem", background:"#EEF3D2", border:"1.5px solid #D4DCA8", borderRadius:"10px", padding:"0.6rem 0.9rem", fontSize:"0.82rem", color:"#1A1C15" };
+const loadingBox: React.CSSProperties   = { display:"flex", alignItems:"center", gap:"0.5rem", color:"#6B7160", fontSize:"0.85rem", padding:"0.75rem", background:"#F7F5EE", borderRadius:"10px", border:"1.5px solid #E8EDD0" };
+const submitBtn: React.CSSProperties    = { width:"100%", padding:"0.9rem", background:"#4D5A2C", color:"#fff", border:"none", borderRadius:"12px", fontWeight:800, fontSize:"0.95rem", display:"flex", alignItems:"center", justifyContent:"center", gap:"0.5rem", cursor:"pointer", fontFamily:"'Public Sans', sans-serif", boxShadow:"0 4px 14px rgba(77,90,44,0.35)", transition:"all 0.2s", letterSpacing:"0.01em" };
+

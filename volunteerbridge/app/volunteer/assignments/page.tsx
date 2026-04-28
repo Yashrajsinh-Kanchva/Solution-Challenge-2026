@@ -7,7 +7,7 @@ import { getCookie } from "@/lib/utils/cookies";
 import {
   Users, MapPin, CheckSquare, Clock,
   Shield, CheckCircle, Circle, AlertCircle,
-  ChevronDown, ChevronUp, Zap, Award, Crown
+  ChevronDown, ChevronUp, Zap, Award
 } from "lucide-react";
 import ToastContainer, { showToast } from "@/components/volunteer/ToastContainer";
 
@@ -21,53 +21,71 @@ const DynamicVolunteerMap = dynamic(() => import("@/components/volunteer/Volunte
   ),
 });
 
-// Mock assignment data for when API is unavailable
-const MOCK_ASSIGNMENTS = [
-  {
-    assignmentId: "asgn-1",
-    requestTitle: "Flood Relief — Medical Support",
-    requestId: "req-flood-001",
-    ngoName: "Sahyog NGO",
-    teamName: "Team Alpha",
-    teamLeader: "Dr. Priya Sharma",
-    status: "in_progress",
-    campLocation: { lat: 23.0010, lng: 72.5588, address: "Vasna Relief Camp, Ahmedabad" },
-    teamMembers: [
-      { name: "Rahul M.", location: { lat: 23.0025, lng: 72.5570, address: "Near Vasna" } },
-      { name: "Sneha K.", location: { lat: 23.0005, lng: 72.5600, address: "Vasna Gate" } },
-    ],
-    checklist: [
-      { id: "t-1", title: "Set up triage station", status: "Done", assignedTeam: "Team Alpha" },
-      { id: "t-2", title: "Conduct patient intake assessments", status: "In Progress", assignedTeam: "Team Alpha" },
-      { id: "t-3", title: "Coordinate with ambulance dispatch", status: "Not Started", assignedTeam: "Team Alpha" },
-      { id: "t-4", title: "Daily medical supply inventory check", status: "In Progress", assignedTeam: "Team Alpha" },
-    ],
-    resources: [
-      { type: "Food Supplies", quantity: 200, deliveryStatus: "Delivered" },
-      { type: "Medical Kits", quantity: 50, deliveryStatus: "In Transit" },
-    ],
-  },
-];
+// ── No mock data: all assignments come from the live database ──
 
 type ChecklistStatus = "Not Started" | "In Progress" | "Done";
+
+// Same 5-step workflow as NGO — both sides use identical step labels
+const STEPS = [
+  { id: "assigned_to_ngo",       label: "Assigned" },
+  { id: "Accepted",              label: "Accepted" },
+  { id: "assigned_to_volunteer", label: "Dispatched" },
+  { id: "in_progress",           label: "On Site" },
+  { id: "completed",             label: "Completed" },
+];
+
+const getStepIndex = (status: string): number => {
+  switch (status) {
+    case "assigned_to_ngo":       return 0;
+    case "Accepted":              return 1;
+    case "assigned_to_volunteer": return 2;
+    case "in_progress":           return 3;
+    case "completed":             return 4;
+    default:                      return 2; // sensible default for volunteers
+  }
+};
+
+/**
+ * Derives the effective stage index from checklist item states.
+ * This is STATE-based, NOT percentage-based:
+ *   - Stages 1–3 (Assigned/Accepted/Dispatched): come from DB status (NGO workflow)
+ *   - Stage 4 "On Site":   activates when ANY item is "In Progress" OR "Done"
+ *   - Stage 5 "Completed": activates ONLY when ALL items are "Done"
+ * This matches the same logic used on the NGO side.
+ */
+function computeStepFromChecklist(dbStatus: string, checklist: any[]): number {
+  const dbStep = getStepIndex(dbStatus);
+  if (!checklist || checklist.length === 0) return dbStep;
+
+  const allDone = checklist.every((t: any) => t.status === "Done" || t.done === true);
+  if (allDone) return 4; // Stage 5: Completed
+
+  const anyActive = checklist.some(
+    (t: any) => t.status === "In Progress" || t.status === "Done" || t.done === true
+  );
+  // Stage 4 "On Site" activates as soon as any item is worked; never go below DB step
+  if (anyActive) return Math.max(dbStep, 3);
+
+  return dbStep;
+}
 
 export default function MyAssignmentsPage() {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<string | null>("asgn-1");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [updatingTask, setUpdatingTask] = useState<string | null>(null);
 
-  const volunteerId = getCookie("vb_volunteer_id") || "vol-101";
-  const volunteerName = getCookie("vb_volunteer_name") || "";
+  const volunteerId = getCookie("vb_volunteer_id") || "";
 
   useEffect(() => {
+    if (!volunteerId) { setLoading(false); return; }
     const fetchData = async () => {
       setLoading(true);
       try {
         const data = await apiClient.getVolunteerAssignments(volunteerId);
-        setAssignments(data?.length > 0 ? data : MOCK_ASSIGNMENTS);
+        setAssignments(Array.isArray(data) ? data : []);
       } catch {
-        setAssignments(MOCK_ASSIGNMENTS);
+        setAssignments([]);
       } finally {
         setLoading(false);
       }
@@ -77,17 +95,32 @@ export default function MyAssignmentsPage() {
 
   const handleTaskStatusUpdate = async (requestId: string, taskId: string, newStatus: ChecklistStatus) => {
     setUpdatingTask(taskId);
-    // Optimistic update immediately
+    const newDone = newStatus === "Done";
+    // Optimistic update — keep both status and done in sync
     setAssignments(prev =>
       prev.map(asgn =>
         asgn.requestId === requestId
-          ? { ...asgn, checklist: asgn.checklist.map((t: any) => t.id === taskId ? { ...t, status: newStatus } : t) }
+          ? {
+              ...asgn,
+              checklist: asgn.checklist.map((t: any) =>
+                t.id === taskId ? { ...t, status: newStatus, done: newDone } : t
+              ),
+            }
           : asgn
       )
     );
     try {
-      await apiClient.updateTaskStatus(requestId, taskId, newStatus, volunteerId);
+      const result = await apiClient.updateTaskStatus(requestId, taskId, newStatus, volunteerId);
       showToast(`Task marked as "${newStatus}"`, "success");
+      // Backend returns allDone=true when every checklist item is Done
+      if (result?.allDone) {
+        setAssignments(prev =>
+          prev.map(asgn =>
+            asgn.requestId === requestId ? { ...asgn, status: "completed" } : asgn
+          )
+        );
+        showToast("All tasks complete — assignment marked Completed! ✓", "success");
+      }
     } catch {
       showToast("Status saved locally — sync when online.", "warning");
     } finally {
@@ -105,9 +138,9 @@ export default function MyAssignmentsPage() {
 
   const getStatusStyle = (status: string) => {
     switch (status) {
-      case "Done": return "bg-green-50 text-green-700 border-green-200";
-      case "In Progress": return "bg-orange-50 text-orange-700 border-orange-200";
-      default: return "bg-gray-50 text-gray-600 border-gray-200";
+      case "Done":        return "bg-success-container text-success border-success-border";
+      case "In Progress": return "bg-warning-container text-warning border-warning-border";
+      default:            return "bg-surface-variant text-muted border-outline-light";
     }
   };
 
@@ -119,9 +152,9 @@ export default function MyAssignmentsPage() {
 
   const getDeliveryStyle = (status: string) => {
     switch (status) {
-      case "Delivered": return "bg-green-50 text-green-700 border-green-200";
-      case "In Transit": return "bg-blue-50 text-blue-700 border-blue-200";
-      default: return "bg-orange-50 text-orange-700 border-orange-200";
+      case "Delivered":  return "bg-success-container text-success border-success-border";
+      case "In Transit": return "bg-info-container text-info border-info-border";
+      default:           return "bg-warning-container text-warning border-warning-border";
     }
   };
 
@@ -151,7 +184,7 @@ export default function MyAssignmentsPage() {
           <h1 className="text-4xl font-black text-on-surface tracking-tight">My Assignments</h1>
           <p className="text-secondary/60 font-medium mt-1">Your active teams, tasks, and camp locations.</p>
         </div>
-        <div className="px-5 py-2.5 bg-white border-2 border-outline/60 rounded-2xl shadow-sm text-xs font-black text-secondary/60 uppercase tracking-widest flex items-center gap-2">
+        <div className="px-5 py-2.5 bg-white border border-outline-light rounded-2xl shadow-card text-xs font-black text-muted uppercase tracking-widest flex items-center gap-2">
           <Award size={16} />
           {assignments.length} Active
         </div>
@@ -166,9 +199,9 @@ export default function MyAssignmentsPage() {
             const progress = total > 0 ? Math.round((done / total) * 100) : 0;
 
             return (
-              <div key={asgn.assignmentId} className={`bg-white rounded-modern border-2 transition-all duration-300 custom-shadow overflow-hidden ${isExpanded ? "border-primary ring-8 ring-primary/5" : "border-outline/60 hover:border-primary/30"}`}>
+              <div key={asgn.assignmentId} className={`bg-white rounded-modern border transition-all duration-200 shadow-card overflow-hidden ${isExpanded ? "border-primary ring-4 ring-primary/8" : "border-outline-light hover:border-primary/40 hover:shadow-md"}`}>
                 {/* Assignment Header */}
-                <div className="p-8">
+                <div className="p-7">
                   <div className="flex justify-between items-start mb-6">
                     <div className="space-y-3">
                       <div className="flex items-center gap-3 flex-wrap">
@@ -176,12 +209,6 @@ export default function MyAssignmentsPage() {
                         <span className="text-[10px] font-black px-3 py-1 bg-blue-50 text-blue-600 border border-blue-200 rounded-full uppercase tracking-widest">
                           {asgn.status?.replace(/_/g, " ")}
                         </span>
-                        {/* Team Leader Crown Badge */}
-                        {(asgn.teamLeader === volunteerId || asgn.teamLeader === volunteerName) && (
-                          <span className="flex items-center gap-1.5 text-[10px] font-black px-3 py-1 bg-yellow-50 text-yellow-700 border border-yellow-300 rounded-full uppercase tracking-widest">
-                            <Crown size={12} className="fill-yellow-500" /> Team Leader
-                          </span>
-                        )}
                       </div>
                       <p className="text-sm font-bold text-secondary/60">{asgn.ngoName}</p>
                     </div>
@@ -221,22 +248,72 @@ export default function MyAssignmentsPage() {
                     </div>
                   </div>
 
-                  {/* Progress Bar */}
-                  {total > 0 && (
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <p className="text-[10px] font-black text-secondary/40 uppercase tracking-widest">Task Progress</p>
-                        <p className="text-[10px] font-black text-primary">{done}/{total} Tasks Done</p>
+                  {/* Step-based Progress Stepper — stage derived from checklist item states */}
+                  {(() => {
+                    // computeStepFromChecklist is state-based (In Progress / Done counts),
+                    // NOT percentage-based. The checklist bar below handles percentages.
+                    const currentStepIdx = computeStepFromChecklist(
+                      asgn.status || "assigned_to_volunteer",
+                      asgn.checklist || []
+                    );
+
+                    return (
+                      <div className="mt-2">
+                        {/* Step stepper */}
+                        <div className="relative px-2 mb-3">
+                          <div className="absolute top-5 left-0 w-full h-1.5 bg-outline/20 rounded-full" />
+                          <div
+                            className="absolute top-5 left-0 h-1.5 bg-primary rounded-full transition-all duration-700 shadow-[0_0_8px_rgba(89,98,60,0.35)]"
+                            style={{ width: `${(currentStepIdx / (STEPS.length - 1)) * 100}%` }}
+                          />
+                          <div className="relative flex justify-between">
+                            {STEPS.map((step, idx) => {
+                              const isComp = currentStepIdx > idx;
+                              const isCurr = currentStepIdx === idx;
+                              return (
+                                <div key={step.id} className="flex flex-col items-center">
+                                  <div className={`w-10 h-10 rounded-full border-4 flex items-center justify-center transition-all duration-500 z-10 ${
+                                    isComp ? "bg-primary border-primary text-white" :
+                                    isCurr ? "bg-white border-primary text-primary ring-4 ring-primary/10 scale-110" :
+                                             "bg-white border-outline/60 text-outline/60"
+                                  }`}>
+                                    {isComp
+                                      ? <CheckCircle size={18} strokeWidth={3} />
+                                      : <span className="text-[10px] font-black">{idx + 1}</span>
+                                    }
+                                  </div>
+                                  <span className={`text-[9px] font-black uppercase tracking-widest mt-2 ${
+                                    isCurr ? "text-primary" : "text-secondary/40"
+                                  }`}>{step.label}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Checklist sub-progress bar */}
+                        {total > 0 && (
+                          <div className="mt-6">
+                            <div className="flex justify-between items-center mb-1.5">
+                              <p className="text-[9px] font-black text-secondary/40 uppercase tracking-widest">Checklist Progress</p>
+                              <p className="text-[9px] font-black text-primary">{done}/{total} Tasks Done</p>
+                            </div>
+                            <div className="w-full h-2 bg-outline/20 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-700 ${
+                                  progress === 100 ? "bg-green-500" :
+                                  progress >= 50   ? "bg-primary" :
+                                                     "bg-orange-400"
+                                }`}
+                                style={{ width: `${progress}%` }}
+                              />
+                            </div>
+                            <p className="text-[9px] font-bold text-secondary/40 mt-1 text-right">{progress}% complete</p>
+                          </div>
+                        )}
                       </div>
-                      <div className="w-full h-2.5 bg-outline/20 rounded-full overflow-hidden">
-                        <div
-                          className="bg-primary h-full rounded-full transition-all duration-700"
-                          style={{ width: `${progress}%` }}
-                        />
-                      </div>
-                      <p className="text-[10px] font-bold text-secondary/40 mt-1 text-right">{progress}% complete</p>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
 
                 {/* Expanded Details */}
@@ -258,7 +335,8 @@ export default function MyAssignmentsPage() {
                                   {getStatusIcon(task.status)}
                                   <div className="flex-1">
                                     <p className={`text-sm font-black ${task.status === "Done" ? "line-through opacity-60" : "text-on-surface"}`}>
-                                      {task.title}
+                                      {/* Render title with fallback to legacy .text field */}
+                                      {task.title || task.text || "Untitled task"}
                                     </p>
                                     {task.assignedTeam && (
                                       <p className="text-[10px] font-bold text-secondary/50 uppercase tracking-widest mt-0.5">
