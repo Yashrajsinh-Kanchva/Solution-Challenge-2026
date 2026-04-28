@@ -20,15 +20,15 @@ export async function GET(req: NextRequest) {
       if (!snap.exists()) {
         return NextResponse.json({ citizens: [] });
       }
-      const raw = snap.val() as Record<string, { id: string; name: string; area: string; status: string }>;
-      const list = Object.values(raw).map(c => ({
-        id:     c.id,
-        name:   c.name,
-        area:   c.area,
-        status: c.status,
+      const raw = snap.val() as Record<string, any>;
+      const list = Object.entries(raw).map(([key, c]) => ({
+        id:     c.id || key,
+        name:   c.name || "Unknown",
+        area:   c.area || "Unknown",
+        status: c.status || "active",
       }));
       // Sort by numeric id (cit-01, cit-02, ...)
-      list.sort((a, b) => a.id.localeCompare(b.id));
+      list.sort((a, b) => (a.id || "").localeCompare(b.id || ""));
       return NextResponse.json({ citizens: list });
     }
 

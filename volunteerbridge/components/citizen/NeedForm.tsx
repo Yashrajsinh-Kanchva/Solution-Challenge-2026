@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect, DragEvent, ChangeEvent } from "react";
+import dynamic from "next/dynamic";
 import {
   MapPin, Upload, X, AlertTriangle, CheckCircle2,
   Loader2, ImageIcon, Video,
 } from "lucide-react";
+
+const LocationPickerMap = dynamic(() => import("./LocationPickerMap"), { ssr: false, loading: () => <div style={{ height: "300px", display: "flex", alignItems: "center", justifyContent: "center", background: "#f6f3ed", borderRadius: "12px", border: "2px solid #ccd6a6", marginTop: "1rem" }}><Loader2 className="animate-spin text-secondary" /></div> });
 
 /* ── Types ────────────────────────────────────────────────── */
 type Severity   = "low" | "medium" | "high" | "critical";
@@ -76,24 +79,19 @@ export default function NeedForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   /* ── Location ─────────────────────────────────────────── */
-  const getLocation = () => {
-    if (!navigator.geolocation) { setLocError("Geolocation not supported"); return; }
-    setLocLoading(true); setLocError("");
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude.toFixed(6);
-        const lng = pos.coords.longitude.toFixed(6);
-        let area_name = `${lat}, ${lng}`;
-        try {
-          const res  = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
-          const data = await res.json();
-          area_name  = data.display_name?.split(",").slice(0, 3).join(", ") ?? area_name;
-        } catch { /* keep coord fallback */ }
-        setLocation({ lat, lng, area_name });
-        setLocLoading(false);
-      },
-      () => { setLocError("Could not get location. Please try again."); setLocLoading(false); }
-    );
+  const handleMapLocationChange = async (latNum: number, lngNum: number) => {
+    const latStr = latNum.toFixed(6);
+    const lngStr = lngNum.toFixed(6);
+    let area_name = `${latStr}, ${lngStr}`;
+    setLocLoading(true);
+    setLocError("");
+    try {
+      const res  = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latStr}&lon=${lngStr}&format=json`);
+      const data = await res.json();
+      area_name  = data.display_name?.split(",").slice(0, 3).join(", ") ?? area_name;
+    } catch { /* keep coord fallback */ }
+    setLocation({ lat: latStr, lng: lngStr, area_name });
+    setLocLoading(false);
   };
 
   /* ── Media ────────────────────────────────────────────── */
@@ -283,10 +281,12 @@ export default function NeedForm() {
         <SectionHeader step="4" title="Location" required />
         <div style={locationBox}>
           <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", marginBottom:"1rem" }}>
-            <div style={locationIconWrap}><MapPin size={22} color="#59623c" /></div>
+            <div style={locationIconWrap}>
+              {locLoading ? <Loader2 className="animate-spin" size={22} color="#59623c" /> : <MapPin size={22} color="#59623c" />}
+            </div>
             <div>
               <p style={{ fontWeight:700, color:"#1c1c18", marginBottom:"0.2rem" }}>
-                {location.lat ? location.area_name : "No location set"}
+                {location.lat ? location.area_name : "Click on the map to set location"}
               </p>
               {location.lat && (
                 <p style={{ fontSize:"0.75rem", color:"#6b7466" }}>
@@ -295,10 +295,12 @@ export default function NeedForm() {
               )}
             </div>
           </div>
-          <button type="button" onClick={getLocation} disabled={locLoading} style={locationBtn}>
-            {locLoading ? <Loader2 size={16} style={{ animation:"spin 1s linear infinite" }} /> : <MapPin size={16} />}
-            {locLoading ? "Getting Location…" : location.lat ? "Update My Location" : "Use My Location"}
-          </button>
+          
+          <LocationPickerMap 
+            location={location.lat ? { lat: parseFloat(location.lat), lng: parseFloat(location.lng) } : null}
+            onChange={handleMapLocationChange}
+          />
+          
           {locError && <p style={{ marginTop:"0.6rem", color:"#ba1a1a", fontSize:"0.8rem" }}>{locError}</p>}
         </div>
         {errors.location && <FieldError msg={errors.location} />}
