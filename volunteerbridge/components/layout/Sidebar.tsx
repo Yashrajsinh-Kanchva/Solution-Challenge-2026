@@ -52,6 +52,7 @@ function getIcon(href: string) {
   // citizen routes
   if (href.includes("report"))       return <FileText size={20} strokeWidth={2} />;
   if (href.includes("history"))      return <History size={20} strokeWidth={2} />;
+  if (href.includes("help"))         return <HeartHandshake size={20} strokeWidth={2} />;
   // ngo routes
   if (href.includes("tasks"))        return <CheckSquare size={20} strokeWidth={2} />;
   if (href.includes("surveys"))      return <UploadCloud size={20} strokeWidth={2} />;

@@ -1,19 +1,25 @@
 "use client";
 
-import { MapPin, Clock, AlertTriangle, Tag } from "lucide-react";
+import { MapPin, Clock, AlertTriangle, Tag, ThumbsUp, ThumbsDown, CheckCircle } from "lucide-react";
 
 type Severity = "low" | "medium" | "high" | "critical";
 
 interface ReportCardProps {
-  id:          string;
-  title:       string;
-  category:    string;
-  description: string;
-  severity:    Severity | "";
-  urgency:     string;
-  location:    { lat: string; lng: string; area_name: string };
-  timestamp:   string;
-  status:      "pending" | "in_progress" | "resolved";
+  id:            string;
+  title:         string;
+  category:      string;
+  description:   string;
+  summary:       string;
+  urgency:       string;
+  location:      { lat: number; lng: number; address: string };
+  beneficiaries: number;
+  createdAt:     string;
+  status:        "pending" | "in_progress" | "resolved" | string;
+  upvotes?:      number;
+  downvotes?:    number;
+  verifiedCount?:number;
+  onVote?:       (id: string, type: "UPVOTE" | "DOWNVOTE") => void;
+  onVerify?:     (id: string) => void;
 }
 
 const SEVERITY_COLOR: Record<string, { bg: string; text: string; border: string }> = {
@@ -36,12 +42,13 @@ const CATEGORY_ICON: Record<string, string> = {
 };
 
 export default function ReportCard({
-  title, category, description, severity, urgency, location, timestamp, status,
+  id, title, category, summary, description, urgency, location, beneficiaries, createdAt, status,
+  upvotes = 0, downvotes = 0, verifiedCount = 0, onVote, onVerify
 }: ReportCardProps) {
-  const sev    = SEVERITY_COLOR[severity] ?? SEVERITY_COLOR.low;
-  const stat   = STATUS_STYLE[status]     ?? STATUS_STYLE.pending;
-  const icon   = CATEGORY_ICON[category]  ?? "📋";
-  const date   = new Date(timestamp).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" });
+  const sev    = SEVERITY_COLOR[urgency] ?? SEVERITY_COLOR.low;
+  const stat   = STATUS_STYLE[status]    ?? STATUS_STYLE.pending;
+  const icon   = CATEGORY_ICON[category] ?? "📋";
+  const date   = new Date(createdAt).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" });
 
   return (
     <div style={card}>
@@ -70,24 +77,46 @@ export default function ReportCard({
         </span>
       </div>
 
-      {/* Description */}
-      <p style={desc}>{description}</p>
+      {/* Description / Summary */}
+      <p style={desc}>{summary || description}</p>
 
       {/* Meta row */}
       <div style={metaRow}>
-        {location.area_name && (
-          <MetaChip icon={<MapPin size={12} />} text={location.area_name.split(",")[0]} />
-        )}
-        {severity && (
-          <span style={{ ...badge, background:sev.bg, color:sev.text, border:`1px solid ${sev.border}` }}>
-            <AlertTriangle size={11} style={{ marginRight:"3px" }} />
-            {severity.charAt(0).toUpperCase() + severity.slice(1)}
-          </span>
+        {location.address && (
+          <MetaChip icon={<MapPin size={12} />} text={location.address.split(",")[0]} />
         )}
         {urgency && (
-          <MetaChip icon={<Tag size={12} />} text={urgency === "immediate" ? "Immediate" : urgency === "24h" ? "Within 24h" : "Can Wait"} />
+          <span style={{ ...badge, background:sev.bg, color:sev.text, border:`1px solid ${sev.border}` }}>
+            <AlertTriangle size={11} style={{ marginRight:"3px" }} />
+            {urgency.charAt(0).toUpperCase() + urgency.slice(1)} Urgency
+          </span>
+        )}
+        {beneficiaries > 0 && (
+          <MetaChip icon={<Tag size={12} />} text={`${beneficiaries} Affected`} />
         )}
         <MetaChip icon={<Clock size={12} />} text={date} />
+      </div>
+
+      {/* Validation Actions */}
+      <div style={{ display:"flex", gap:"0.5rem", marginTop:"0.5rem", borderTop:"1px dashed #e8edca", paddingTop:"1rem" }}>
+        <button 
+          onClick={() => onVote?.(id, "UPVOTE")}
+          style={{ display:"flex", alignItems:"center", gap:"0.3rem", padding:"0.4rem 0.8rem", borderRadius:"8px", background:"#f0fdf4", border:"1px solid #bbf7d0", color:"#166534", fontSize:"0.8rem", fontWeight:600, cursor:"pointer", transition:"all 0.2s" }}
+        >
+          <ThumbsUp size={14} /> {upvotes}
+        </button>
+        <button 
+          onClick={() => onVote?.(id, "DOWNVOTE")}
+          style={{ display:"flex", alignItems:"center", gap:"0.3rem", padding:"0.4rem 0.8rem", borderRadius:"8px", background:"#fef2f2", border:"1px solid #fecaca", color:"#991b1b", fontSize:"0.8rem", fontWeight:600, cursor:"pointer", transition:"all 0.2s" }}
+        >
+          <ThumbsDown size={14} /> {downvotes}
+        </button>
+        <button 
+          onClick={() => onVerify?.(id)}
+          style={{ display:"flex", alignItems:"center", gap:"0.3rem", padding:"0.4rem 0.8rem", borderRadius:"8px", background:"#eff6ff", border:"1px solid #bfdbfe", color:"#1e40af", fontSize:"0.8rem", fontWeight:600, cursor:"pointer", transition:"all 0.2s", marginLeft:"auto" }}
+        >
+          <CheckCircle size={14} /> Still Exists ({verifiedCount})
+        </button>
       </div>
     </div>
   );

@@ -20,6 +20,11 @@ export const CITIZEN_ROUTES: NavigationRoute[] = [
 		href: "/citizen/history",
 		description: "Track status of your past reports",
 	},
+	{
+		label: "Request Help",
+		href: "/citizen/help",
+		description: "Request personal or individual help",
+	},
 ];
 
 export const ADMIN_ROUTES: NavigationRoute[] = [

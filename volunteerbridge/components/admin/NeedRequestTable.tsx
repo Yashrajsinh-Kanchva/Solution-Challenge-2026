@@ -38,6 +38,7 @@ export default function NeedRequestTable({ requests, onStatusChange, onDelete, n
         <thead>
           <tr>
             <th>Title &amp; Summary</th>
+            <th>Type</th>
             <th>Category</th>
             <th>Location</th>
             <th>Urgency</th>
@@ -64,6 +65,18 @@ export default function NeedRequestTable({ requests, onStatusChange, onDelete, n
                         {req.summary.slice(0, 60)}{req.summary.length > 60 ? "…" : ""}
                       </span>
                     </div>
+                  </td>
+
+                  {/* Type */}
+                  <td>
+                    <span style={{ 
+                      fontSize:"0.65rem", fontWeight:800, padding:"0.2rem 0.5rem", borderRadius:"6px", textTransform:"uppercase",
+                      background: req.requestType === "HELP" ? "#ede9fe" : "#e0f2fe",
+                      color: req.requestType === "HELP" ? "#5b21b6" : "#0369a1",
+                      border: `1px solid ${req.requestType === "HELP" ? "#ddd6fe" : "#bae6fd"}`
+                    }}>
+                      {req.requestType === "HELP" ? "Help" : "Issue"}
+                    </span>
                   </td>
 
                   {/* Category */}

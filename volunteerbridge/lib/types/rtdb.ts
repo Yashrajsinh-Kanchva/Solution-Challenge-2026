@@ -25,6 +25,7 @@ export interface CitizenRecord {
   email: string;
   aadhaarNumber: string;
   isVerified: boolean;
+  trustScore?: number;
   location: GeoLocation;
   createdAt: string;
 }
@@ -67,19 +68,46 @@ export interface VolunteerRecord {
 }
 
 export interface RequestRecord {
+  id: string;
   requestId: string;
   userId: string;
+  requestType?: "ISSUE" | "HELP";
   title: string;
   description: string;
+  summary: string;
+  text: string;
   category: string;
   aiCategory: string;
   urgency: Urgency;
   location: GeoLocation;
+  requestedBy: string;
+  beneficiaries: number;
   status: RequestStatus;
   suggestedNGOs: string[];
   assignedNgoId: string | null;
   assignedVolunteerIds?: string[];
   assignedResources?: NgoResources;
   checklist?: { id: number; text: string; done: boolean }[];
+  createdAt: string;
+
+  // Trust & Verification System
+  upvotes?: number;
+  downvotes?: number;
+  verifiedCount?: number;
+  credibilityScore?: number;
+}
+
+export interface VoteRecord {
+  id: string;
+  requestId: string;
+  userId: string;
+  voteType: "UPVOTE" | "DOWNVOTE";
+  createdAt: string;
+}
+
+export interface VerificationRecord {
+  id: string;
+  requestId: string;
+  userId: string;
   createdAt: string;
 }

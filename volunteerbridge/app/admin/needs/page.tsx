@@ -32,6 +32,7 @@ export default function NeedsPage() {
   const [statusF,    setStatusF]    = useState<StatusFilter>("all");
   const [categoryF,  setCategoryF]  = useState("all");
   const [urgencyF,   setUrgencyF]   = useState("all");
+  const [typeF,      setTypeF]      = useState("all");
 
   useEffect(() => {
     Promise.all([
@@ -70,12 +71,13 @@ export default function NeedsPage() {
       if (statusF   !== "all" && r.status   !== statusF)   return false;
       if (categoryF !== "all" && r.category !== categoryF) return false;
       if (urgencyF  !== "all" && r.urgency  !== urgencyF)  return false;
+      if (typeF     !== "all" && (r.requestType || "ISSUE") !== typeF) return false;
       if (q && !r.title.toLowerCase().includes(q) &&
                !r.requestedBy.toLowerCase().includes(q) &&
                !r.location.toLowerCase().includes(q))      return false;
       return true;
     });
-  }, [requests, search, statusF, categoryF, urgencyF]);
+  }, [requests, search, statusF, categoryF, urgencyF, typeF]);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -85,7 +87,7 @@ export default function NeedsPage() {
         ...formState,
         beneficiaries: Number(formState.beneficiaries),
         status: "pending",
-        createdAt: new Date().toISOString().slice(0, 10),
+        createdAt: new Date().toISOString(),
       });
       setRequests(cur => [newReq, ...cur]);
       setFormState(DEFAULT_FORM);
@@ -233,6 +235,13 @@ export default function NeedsPage() {
             <option value="pending">Pending</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
+          </select>
+
+          {/* Type filter */}
+          <select className="text-input" style={{ width:"auto", margin:0 }} value={typeF} onChange={e => setTypeF(e.target.value)}>
+            <option value="all">All Types</option>
+            <option value="ISSUE">Issues</option>
+            <option value="HELP">Help Requests</option>
           </select>
 
           {/* Category filter */}
