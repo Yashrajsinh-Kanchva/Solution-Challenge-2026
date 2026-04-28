@@ -322,6 +322,7 @@ export const apiClient = {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || "Failed to verify");
     return data;
+  },
 
   deleteRequest: async (requestId: string) => {
     return await safeFetch(`${API_BASE}/admin/requests/${requestId}`, {
