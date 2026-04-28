@@ -35,7 +35,7 @@ export default function NgoTasks() {
       apiClient.getNgoStats(ngoId)
     ]);
     setRequests(reqData || []);
-    setVolunteers((volData || []).filter((v: any) => v.availability));
+    setVolunteers((volData || []).filter((v: any) => v.availability && v.name && (v.id || v.volunteerId)));
     setNgoStats(statsData);
     setLoading(false);
   };

@@ -52,7 +52,7 @@ export async function getNgoDashboardStats(req: AuthenticatedRequest, res: Respo
     const sharedRequests = Object.values((sharedSnap.val() || {}) as Record<string, RequestRecord>);
     const requests = [...specificRequests, ...sharedRequests];
     
-    const volunteers = Object.values((volunteersSnap.val() || {}) as Record<string, any>);
+    const volunteers = Object.values((volunteersSnap.val() || {}) as Record<string, any>).filter((v: any) => v && (v.volunteerId || v.id) && v.name);
     const ngo = ngoSnap.val();
 
     // Volunteer Insights: Top 3 Skills
@@ -114,6 +114,7 @@ export async function getNgoVolunteers(req: AuthenticatedRequest, res: Response)
 
     // Derive status and availability dynamically, supporting both legacy and new data
     const volunteers = Object.values(volunteerMap)
+      .filter((v: any) => v && (v.volunteerId || v.id) && v.name)
       .filter((v: any) => !v.status || v.status === "ACTIVE" || v.status === "idle" || v.status === "assigned" || v.membershipStatus === "ACTIVE")
       .map((v: any) => {
         const isOnActiveTask = activeVolunteerIds.has(v.volunteerId);
@@ -205,6 +206,36 @@ export async function handleVolunteerJoinRequest(req: AuthenticatedRequest, res:
 
       // Create or update volunteer record
       await dbRef(`Volunteer/${request.volunteerId}`).set(volunteerData);
+
+      // F3: If this approval came from an opportunity application, mark the application APPROVED
+      // so the volunteer portal shows the correct status without manual refresh.
+      if (request.requestType === "opportunity_application" && request.opportunityId) {
+        const appSnap = await dbRef("VolunteerApplication")
+          .orderByChild("volunteerId")
+          .equalTo(request.volunteerId)
+          .once("value");
+        const apps = appSnap.val() || {};
+        const matchingAppKey = Object.keys(apps).find(k => apps[k].opportunityId === request.opportunityId);
+        if (matchingAppKey) {
+          await dbRef(`VolunteerApplication/${matchingAppKey}`).update({ status: "APPROVED" });
+        }
+        // Also update the applicant entry inside the VolunteerOpportunity document itself
+        await dbRef(`VolunteerOpportunity/${request.opportunityId}/applicants/${request.volunteerId}/status`).set("APPROVED");
+      }
+    } else {
+      // REJECT: mark application status as well if opportunity-sourced
+      if (request.requestType === "opportunity_application" && request.opportunityId) {
+        const appSnap = await dbRef("VolunteerApplication")
+          .orderByChild("volunteerId")
+          .equalTo(request.volunteerId)
+          .once("value");
+        const apps = appSnap.val() || {};
+        const matchingAppKey = Object.keys(apps).find(k => apps[k].opportunityId === request.opportunityId);
+        if (matchingAppKey) {
+          await dbRef(`VolunteerApplication/${matchingAppKey}`).update({ status: "REJECTED" });
+        }
+        await dbRef(`VolunteerOpportunity/${request.opportunityId}/applicants/${request.volunteerId}/status`).set("REJECTED");
+      }
     }
 
     res.status(200).json({ message: `Request ${status.toLowerCase()} successfully`, status });
