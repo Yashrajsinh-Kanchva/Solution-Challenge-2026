@@ -3,7 +3,8 @@
 import { useMemo, useState, useEffect } from "react";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { formatDateLabel } from "@/lib/utils/formatters";
-import { apiClient } from "@/lib/api/client";
+import { db } from "@/lib/firebaseClient";
+import { ref, get, update } from "firebase/database";
 import {
   Search, RefreshCw, Download, ChevronDown, ChevronUp,
   Check, X, Mail, Phone, MapPin, FileText, Building2,
@@ -22,10 +23,32 @@ export default function NgoApprovalsPage() {
   const [processing,    setProcessing]    = useState<string | null>(null);
 
   useEffect(() => {
-    apiClient.getNgos()
-      .then(data => setRegistrations(Array.isArray(data) ? data : []))
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    const fetchNgos = async () => {
+      setLoading(true);
+      try {
+        console.log("Fetching NGOs from Firebase RTDB...");
+        const snapshot = await get(ref(db, "NGO"));
+        const data = snapshot.exists() ? snapshot.val() : {};
+        console.log("NGO data fetched:", data);
+        
+        const ngos = Object.values(data).map((n: any) => ({
+          ...n,
+          id: n.id || n.ngoId,
+          ngoName: n.ngoName || n.name,
+          contactName: n.contactName || n.name,
+          status: n.status || (n.verified ? "approved" : "pending"),
+          area: n.area || n.location?.address || "Unassigned",
+        }));
+        
+        setRegistrations(ngos);
+      } catch (error) {
+        console.error("Error fetching NGOs:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNgos();
   }, []);
 
   const stats = useMemo(() => ({
@@ -49,10 +72,14 @@ export default function NgoApprovalsPage() {
   const onApprove = async (id: string) => {
     setProcessing(id);
     try {
-      await apiClient.approveNgo(id, "approved");
+      console.log(`Approving NGO: ${id}`);
+      await update(ref(db, `NGO/${id}`), { status: "approved" });
       setRegistrations(cur => cur.map(r => r.id === id ? { ...r, status: "approved" } : r));
       setExpandedId(null);
-    } catch { alert("Failed to approve NGO."); }
+    } catch (error) { 
+      console.error("Approve NGO failed:", error);
+      alert("Failed to approve NGO."); 
+    }
     finally { setProcessing(null); }
   };
 
@@ -61,10 +88,14 @@ export default function NgoApprovalsPage() {
     if (!reason) { alert("Please enter a rejection reason before rejecting."); return; }
     setProcessing(id);
     try {
-      await apiClient.approveNgo(id, "rejected", reason);
+      console.log(`Rejecting NGO: ${id} for reason: ${reason}`);
+      await update(ref(db, `NGO/${id}`), { status: "rejected", reviewReason: reason });
       setRegistrations(cur => cur.map(r => r.id === id ? { ...r, status: "rejected", reviewReason: reason } : r));
       setExpandedId(null);
-    } catch { alert("Failed to reject NGO."); }
+    } catch (error) { 
+      console.error("Reject NGO failed:", error);
+      alert("Failed to reject NGO."); 
+    }
     finally { setProcessing(null); }
   };
 
@@ -72,9 +103,13 @@ export default function NgoApprovalsPage() {
     if (!confirm("Revoke approval and move back to pending?")) return;
     setProcessing(id);
     try {
-      await apiClient.approveNgo(id, "pending" as any);
+      console.log(`Revoking NGO approval: ${id}`);
+      await update(ref(db, `NGO/${id}`), { status: "pending", reviewReason: null });
       setRegistrations(cur => cur.map(r => r.id === id ? { ...r, status: "pending", reviewReason: undefined } : r));
-    } catch { alert("Failed to revoke."); }
+    } catch (error) { 
+      console.error("Revoke NGO failed:", error);
+      alert("Failed to revoke."); 
+    }
     finally { setProcessing(null); }
   };
 

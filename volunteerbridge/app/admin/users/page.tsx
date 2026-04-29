@@ -4,7 +4,8 @@ import { useMemo, useState, useEffect } from "react";
 import TabSwitcher from "@/components/admin/TabSwitcher";
 import UserTable from "@/components/admin/UserTable";
 import type { AdminUserFilter } from "@/lib/types/admin";
-import { apiClient } from "@/lib/api/client";
+import { db } from "@/lib/firebaseClient";
+import { ref, get } from "firebase/database";
 import { Users as UsersIcon, ShieldCheck, UserPlus } from "lucide-react";
 
 const tabs = [
@@ -19,10 +20,67 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiClient.getUsers()
-      .then(data => setUsers(Array.isArray(data) ? data : []))
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    const fetchAllUsers = async () => {
+      setLoading(true);
+      try {
+        console.log("Fetching users from Firebase RTDB...");
+        const [ngoSnap, citizenSnap, volunteerSnap] = await Promise.all([
+          get(ref(db, "NGO")),
+          get(ref(db, "Citizen")),
+          get(ref(db, "Volunteer"))
+        ]);
+
+        const ngosData = ngoSnap.exists() ? ngoSnap.val() : {};
+        const citizensData = citizenSnap.exists() ? citizenSnap.val() : {};
+        const volunteersData = volunteerSnap.exists() ? volunteerSnap.val() : {};
+
+        console.log("Raw NGO data:", ngosData);
+        console.log("Raw Citizen data:", citizensData);
+        console.log("Raw Volunteer data:", volunteersData);
+
+        const ngos = Object.values(ngosData).map((n: any) => ({
+          ...n,
+          id: n.id || n.ngoId,
+          role: "ngo",
+          name: n.ngoName || n.name,
+          registeredAt: n.registeredAt || n.submittedAt,
+          status: n.status || (n.verified ? "active" : "pending"),
+        }));
+
+        const citizens = Object.values(citizensData).map((c: any) => ({
+          ...c,
+          id: c.id || c.userId,
+          role: "citizen",
+          registeredAt: c.registeredAt || c.createdAt?.slice(0, 10),
+          status: c.status || (c.isVerified ? "active" : "pending"),
+        }));
+
+        const volunteers = Object.values(volunteersData).map((v: any) => ({
+          ...v,
+          id: v.id || v.volunteerId,
+          role: "volunteer",
+          registeredAt: v.registeredAt || v.createdAt?.slice(0, 10),
+          status: v.status === "offline" ? "inactive" : "active",
+          email: v.email || `${(v.name || "volunteer").toLowerCase().replace(/\s+/g, ".")}@example.com`,
+        }));
+
+        const allUsers = [...ngos, ...citizens, ...volunteers];
+        allUsers.sort((a, b) => {
+          const dateA = new Date(a.registeredAt || a.createdAt || 0).getTime();
+          const dateB = new Date(b.registeredAt || b.createdAt || 0).getTime();
+          return dateB - dateA;
+        });
+
+        console.log("Combined users:", allUsers);
+        setUsers(allUsers);
+      } catch (error) {
+        console.error("Error fetching users from Firebase:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllUsers();
   }, []);
 
   const filteredUsers = useMemo(
