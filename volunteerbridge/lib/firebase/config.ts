@@ -11,8 +11,14 @@ type ServiceAccountEnv = {
 function getServiceAccountFromEnv(): ServiceAccountEnv {
 	const projectId = process.env.FIREBASE_PROJECT_ID;
 	const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-	const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+	const privateKey = process.env.FIREBASE_PRIVATE_KEY
+		? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n")
+		: undefined;
 	const databaseURL = process.env.FIREBASE_DATABASE_URL;
+
+	if (!privateKey) {
+		console.error("❌ Firebase private key missing in environment variables");
+	}
 
 	if (!projectId || !clientEmail || !privateKey || !databaseURL) {
 		throw new Error(
