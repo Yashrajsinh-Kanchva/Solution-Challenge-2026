@@ -62,9 +62,9 @@ export default function NeedsPage() {
     const validRequests = requests.filter(Boolean);
     return {
       all:      validRequests.length,
-      pending:  validRequests.filter(r => r.status === "pending" || r.status === "pending_admin").length,
-      approved: validRequests.filter(r => r.status === "approved" || r.status === "assigned_to_ngo").length,
-      rejected: validRequests.filter(r => r.status === "rejected").length,
+      pending:  validRequests.filter(r => r?.status === "pending" || r?.status === "pending_admin").length,
+      approved: validRequests.filter(r => r?.status === "approved" || r?.status === "assigned_to_ngo").length,
+      rejected: validRequests.filter(r => r?.status === "rejected").length,
     };
   }, [requests]);
 
@@ -73,10 +73,10 @@ export default function NeedsPage() {
     return requests.filter(Boolean).filter(r => {
       if (statusF !== "all") {
         if (statusF === "pending") {
-          if (r.status !== "pending" && r.status !== "pending_admin") return false;
+          if (r?.status !== "pending" && r?.status !== "pending_admin") return false;
         } else if (statusF === "approved") {
-          if (r.status !== "approved" && r.status !== "assigned_to_ngo") return false;
-        } else if (r.status !== statusF) {
+          if (r?.status !== "approved" && r?.status !== "assigned_to_ngo") return false;
+        } else if (r?.status !== statusF) {
           return false;
         }
       }

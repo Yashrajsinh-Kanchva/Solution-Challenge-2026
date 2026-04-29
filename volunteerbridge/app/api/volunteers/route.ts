@@ -11,7 +11,7 @@ export async function GET() {
       id: v.id || v.volunteerId,
       role: "volunteer",
       registeredAt: v.registeredAt || v.createdAt?.slice(0, 10),
-      status: v.status === "offline" ? "inactive" : "active",
+      status: v?.status === "offline" ? "inactive" : "active",
       email: v.email || `${(v.name || "volunteer").toLowerCase().replace(/\s+/g, ".")}@example.com`,
     })) : [];
     return NextResponse.json(volunteers);

@@ -15,7 +15,7 @@ type Report = {
   urgency: string;
   location: { lat: number; lng: number; address: string };
   beneficiaries: number;
-  status: "pending" | "in_progress" | "resolved" | string;
+  status: "pending" | "pending_admin" | "approved" | "assigned_to_ngo" | "in_progress" | "resolved" | "completed" | "rejected";
   createdAt: string;
 };
 
@@ -56,17 +56,17 @@ export default function MyReportsPage() {
   const filtered = filter === "all"
     ? reports
     : reports.filter(r => {
-        if (filter === "pending") return r.status === "pending" || r.status === "pending_admin";
-        if (filter === "in_progress") return r.status === "in_progress" || r.status === "assigned_to_ngo" || r.status === "approved";
-        return r.status === filter;
+        if (filter === "pending") return r?.status === "pending" || r?.status === "pending_admin";
+        if (filter === "in_progress") return r?.status === "in_progress" || r?.status === "assigned_to_ngo" || r?.status === "approved";
+        return r?.status === filter;
       });
 
   /* ── Counts ── */
   const counts: Record<Filter, number> = {
     all:         reports.length,
-    pending:     reports.filter(r => r.status === "pending" || r.status === "pending_admin").length,
-    in_progress: reports.filter(r => r.status === "in_progress" || r.status === "assigned_to_ngo" || r.status === "approved").length,
-    resolved:    reports.filter(r => r.status === "resolved" || r.status === "completed").length,
+    pending:     reports.filter(r => r?.status === "pending" || r?.status === "pending_admin").length,
+    in_progress: reports.filter(r => r?.status === "in_progress" || r?.status === "assigned_to_ngo" || r?.status === "approved").length,
+    resolved:    reports.filter(r => r?.status === "resolved" || r?.status === "completed").length,
   };
 
   return (

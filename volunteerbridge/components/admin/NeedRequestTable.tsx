@@ -57,7 +57,7 @@ export default function NeedRequestTable({ requests, onStatusChange, onDelete, n
           <tbody>
             {requests.map((req) => {
               const isExpanded = expandedId === req.id;
-              const isPending  = req.status === "pending" || req.status === "pending_admin";
+              const isPending  = req?.status === "pending" || req?.status === "pending_admin";
 
               return (
                 <Fragment key={req.id}>
@@ -245,7 +245,7 @@ export default function NeedRequestTable({ requests, onStatusChange, onDelete, n
                 {expandedId === req.id ? "Close Details" : "Review & Manage"}
               </button>
               
-              {(req.status === "pending" || req.status === "pending_admin") && (
+              {(req?.status === "pending" || req?.status === "pending_admin") && (
                 <div className="grid grid-cols-2 gap-2">
                   <button onClick={() => onStatusChange(req.id, "approved")} className="py-3 bg-[#4D5A2C] text-white rounded-xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
                     <Check size={14} strokeWidth={3} /> Approve

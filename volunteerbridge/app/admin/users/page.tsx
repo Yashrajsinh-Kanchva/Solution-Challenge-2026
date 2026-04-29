@@ -38,8 +38,8 @@ export default function UsersPage() {
     count: users.filter((user) => user.role === tab.value).length,
   }));
 
-  const activeCount = filteredUsers.filter((u) => u.status === "active").length;
-  const pendingCount = filteredUsers.filter((u) => u.status === "pending").length;
+  const activeCount = filteredUsers.filter((u) => u?.status === "active").length;
+  const pendingCount = filteredUsers.filter((u) => u?.status === "pending").length;
 
   const onToggleStatus = async (userId: string) => {
     setUsers((current) =>

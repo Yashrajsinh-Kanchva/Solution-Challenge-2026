@@ -113,9 +113,9 @@ export default function VolunteerRequestsPage() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
                       <h4 className="text-2xl font-black text-on-surface">{req.name}</h4>
-                      <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest ${getStatusStyles(req.status)}`}>
-                        {getStatusIcon(req.status)}
-                        {req.status}
+                      <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest ${getStatusStyles(req?.status)}`}>
+                        {getStatusIcon(req?.status)}
+                        {req?.status}
                       </span>
                     </div>
                     <div className="flex items-center gap-6 text-sm font-bold text-secondary/60">
@@ -142,7 +142,7 @@ export default function VolunteerRequestsPage() {
                   </div>
                 </div>
 
-                {req.status === "PENDING" && (
+                {req?.status === "PENDING" && (
                   <div className="flex gap-4">
                     <button 
                       disabled={actioningId === req.id}

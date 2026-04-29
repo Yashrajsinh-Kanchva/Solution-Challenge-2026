@@ -107,8 +107,8 @@ export default function NgoDashboard() {
                 stats.recentActivity.map((req: any) => (
                   <div key={req.requestId} className="p-7 hover:bg-surface-variant/5 transition-colors flex items-start gap-6 group/item">
                     <div className={`mt-1.5 w-3 h-3 rounded-full shadow-sm ring-4 ring-offset-2 ${
-                      req.status === "completed" || req.status === "Completed" ? "bg-green-500 ring-green-100" :
-                      req.status === "assigned_to_ngo" ? "bg-orange-500 ring-orange-100 animate-pulse" :
+                      req?.status === "completed" || req?.status === "Completed" ? "bg-green-500 ring-green-100" :
+                      req?.status === "assigned_to_ngo" ? "bg-orange-500 ring-orange-100 animate-pulse" :
                       "bg-blue-500 ring-blue-100"
                     }`} />
                     <div className="flex-1">
@@ -117,11 +117,11 @@ export default function NgoDashboard() {
                         <span className="text-[10px] text-secondary/40 font-black uppercase tracking-widest">{new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                       <p className="text-sm text-on-surface-variant/80 font-medium leading-relaxed mb-4">
-                        {req.status === "assigned_to_ngo" ? "New request waiting for your review." :
-                         req.status === "Accepted" ? "Request accepted. Preparing volunteer and resource assignment." :
-                         req.status === "assigned_to_volunteer" ? "Volunteers are on their way to the location." :
-                         req.status === "completed" || req.status === "Completed" ? "The request has been successfully closed." :
-                         `Status updated to: ${req.status.replace(/_/g, " ")}`}
+                        {req?.status === "assigned_to_ngo" ? "New request waiting for your review." :
+                         req?.status === "Accepted" ? "Request accepted. Preparing volunteer and resource assignment." :
+                         req?.status === "assigned_to_volunteer" ? "Volunteers are on their way to the location." :
+                         req?.status === "completed" || req?.status === "Completed" ? "The request has been successfully closed." :
+                         `Status updated to: ${req?.status?.replace(/_/g, " ") || "unknown"}`}
                       </p>
                       <div className="flex items-center gap-2">
                         <span className="text-[9px] font-black px-2.5 py-1 bg-surface-variant/50 text-secondary/60 rounded-lg uppercase tracking-widest border border-outline/30">

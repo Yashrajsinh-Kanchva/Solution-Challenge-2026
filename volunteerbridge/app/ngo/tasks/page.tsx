@@ -149,7 +149,7 @@ export default function NgoTasks() {
               .sort((a, b) => b.score - a.score)
               .slice(0, 3);
 
-            const urgency = req.urgency.toLowerCase();
+            const urgency = req?.urgency?.toLowerCase() || "medium";
             const isCritical = urgency === "critical" || urgency === "high";
 
             return (
@@ -173,8 +173,8 @@ export default function NgoTasks() {
                     <div className="text-right">
                       <p className="text-[10px] font-black text-secondary/40 uppercase tracking-widest mb-2">Status</p>
                       <div className="flex flex-col items-end gap-3">
-                        <span className={`text-xs font-black px-4 py-1.5 rounded-xl uppercase border-2 shadow-sm ${getStatusStyles(req.status)}`}>
-                          {req.status.replace(/_/g, " ")}
+                        <span className={`text-xs font-black px-4 py-1.5 rounded-xl uppercase border-2 shadow-sm ${getStatusStyles(req?.status)}`}>
+                          {req?.status?.replace(/_/g, " ") || "unknown"}
                         </span>
                         
                         {(req.assignedVolunteers?.length > 0 || ((req.assignedResources || req.allocatedResources) && Object.values(req.assignedResources || req.allocatedResources).some(v => (v as number) > 0))) && (
@@ -222,7 +222,7 @@ export default function NgoTasks() {
                     </div>
                     <div className="space-y-1.5 p-4 bg-surface-variant/10 rounded-2xl border border-outline/30 text-center">
                       <p className="text-[10px] font-black text-secondary/40 uppercase tracking-widest">Request ID</p>
-                      <p className="text-sm font-black text-primary tracking-widest">#{req.requestId.slice(-8).toUpperCase()}</p>
+                      <p className="text-sm font-black text-primary tracking-widest">#{req?.requestId?.slice(-8).toUpperCase() || "unknown"}</p>
                     </div>
                     <div className="space-y-1.5 p-4 bg-surface-variant/10 rounded-2xl border border-outline/30 text-right">
                       <p className="text-[10px] font-black text-secondary/40 uppercase tracking-widest">Date Reported</p>

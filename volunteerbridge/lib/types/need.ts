@@ -1,4 +1,4 @@
-export type NeedStatus = "pending" | "approved" | "rejected";
+export type NeedStatus = "pending" | "pending_admin" | "approved" | "assigned_to_ngo" | "rejected" | "completed" | "in_progress";
 
 export interface NeedRequest {
 	id: string;

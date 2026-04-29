@@ -98,9 +98,9 @@ export default function MyTasksPage() {
 
   const stats = {
     total:      allTasks.length,
-    done:       allTasks.filter(t => t.status === "Done").length,
-    inProgress: allTasks.filter(t => t.status === "In Progress").length,
-    notStarted: allTasks.filter(t => t.status === "Not Started").length,
+    done:       allTasks.filter(t => t?.status === "Done").length,
+    inProgress: allTasks.filter(t => t?.status === "In Progress").length,
+    notStarted: allTasks.filter(t => t?.status === "Not Started").length,
   };
   const progress = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
 
@@ -108,7 +108,7 @@ export default function MyTasksPage() {
   const filteredGroups = useMemo(() =>
     groups.map(g => ({
       ...g,
-      tasks: filter === "all" ? g.tasks : g.tasks.filter(t => t.status === filter),
+      tasks: filter === "all" ? g.tasks : g.tasks.filter(t => t?.status === filter),
     })).filter(g => g.tasks.length > 0),
     [groups, filter]
   );
@@ -211,7 +211,7 @@ export default function MyTasksPage() {
       {filteredGroups.length > 0 ? (
         <div className="space-y-8">
           {filteredGroups.map(group => {
-            const grpDone  = group.tasks.filter(t => t.status === "Done").length;
+            const grpDone  = group.tasks.filter(t => t?.status === "Done").length;
             const grpTotal = group.tasks.length;
             const grpPct   = grpTotal > 0 ? Math.round((grpDone / grpTotal) * 100) : 0;
             return (
@@ -241,14 +241,14 @@ export default function MyTasksPage() {
                   {group.tasks.map(task => (
                     <div
                       key={task.id}
-                      className={`p-6 transition-all duration-300 ${task.status === "Done" ? "bg-green-50/40" : task.status === "In Progress" ? "bg-orange-50/30" : ""}`}
+                      className={`p-6 transition-all duration-300 ${task?.status === "Done" ? "bg-green-50/40" : task?.status === "In Progress" ? "bg-orange-50/30" : ""}`}
                     >
                       <div className="flex items-center gap-5">
                         <div className="shrink-0">
                           {getStatusIcon(task.status)}
                         </div>
                         <div className="flex-1">
-                          <p className={`text-base font-black ${task.status === "Done" ? "line-through text-secondary/40" : "text-on-surface"}`}>
+                          <p className={`text-base font-black ${task?.status === "Done" ? "line-through text-secondary/40" : "text-on-surface"}`}>
                             {task.title || "Untitled task"}
                           </p>
                         </div>
@@ -258,9 +258,9 @@ export default function MyTasksPage() {
                             task.status === "In Progress" ? "bg-orange-100 text-orange-700 border-orange-200" :
                             "bg-gray-100 text-gray-600 border-gray-200"
                           }`}>
-                            {task.status}
+                            {task?.status}
                           </span>
-                          {task.status !== "Done" && (
+                          {task?.status !== "Done" && (
                             <button
                               disabled={updatingId === task.id}
                               onClick={() => handleUpdate(task)}
