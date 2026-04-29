@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 import { db } from "@/lib/firebaseAdmin";
 import { NextResponse } from "next/server";
 

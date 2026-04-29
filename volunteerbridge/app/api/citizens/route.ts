@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from "next/server";
 import { initFirebaseAdmin } from "@/lib/firebase/config";
 import { getDatabase } from "firebase-admin/database";
@@ -44,3 +46,4 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
+
