@@ -1,8 +1,7 @@
 /**
- * API client for admin screens. The Express API reads Firebase Realtime
- * Database paths seeded by scripts/seed-firebase-admin-data.ts.
+ * API client for admin screens. These call Next.js API routes (app/api/*).
  */
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = "/api";
 
 import { getCookie } from "../utils/cookies";
 
