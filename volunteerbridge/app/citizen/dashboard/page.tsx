@@ -251,7 +251,7 @@ export default function CitizenDashboard() {
                     {report.title}
                   </h4>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", color: "#6b7466", fontSize: "0.8rem" }}>
-                    <MapPin size={12} /> {typeof report.location === "string" ? report.location : report.location?.address || "Unknown"}
+                    <MapPin size={12} /> {typeof report?.location === "string" ? report?.location : report?.location?.address ?? "Unknown"}
                   </div>
                 </div>
                 <span style={{

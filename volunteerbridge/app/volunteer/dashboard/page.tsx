@@ -153,7 +153,7 @@ export default function VolunteerDashboard() {
                       <div className="flex items-center gap-4 mt-2">
                         <div className="flex items-center gap-1.5 text-xs font-bold text-secondary/60">
                           <MapPin size={14} className="text-primary" />
-                          {opp.location?.address || opp.location || "Location TBD"}
+                          {opp?.location?.address ?? opp?.location ?? "Location TBD"}
                         </div>
                         <div className="flex items-center gap-1.5 text-xs font-bold text-secondary/60">
                           <Users size={14} className="text-primary" />

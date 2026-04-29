@@ -72,7 +72,7 @@ export default function VolunteerProfileModal({ volunteer, onClose }: VolunteerP
                   Location
                 </h3>
                 <p className="text-sm font-bold text-on-surface">
-                  {volunteer.location?.address || "Registered Area"}
+                  {volunteer?.location?.address ?? "Registered Area"}
                 </p>
                 <p className="text-xs font-medium text-secondary/40 mt-1">
                   Ready for deployment within {volunteer.serviceRadius || 15}km radius

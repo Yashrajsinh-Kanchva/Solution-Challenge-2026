@@ -79,14 +79,14 @@ export default function ReportCard({
       </div>
 
       {/* Description / Summary */}
-      <p style={desc}>{summary || description}</p>
+      <p style={desc}>{summary ?? description ?? "No details provided"}</p>
 
       {/* Meta row */}
       <div style={metaRow}>
         {(typeof location === "string" ? location : location?.address) && (
           <MetaChip 
             icon={<MapPin size={12} />} 
-            text={(typeof location === "string" ? location : location.address).split(",")[0]} 
+            text={(typeof location === "string" ? location : location?.address ?? "").split(",")[0]} 
           />
         )}
         {urgency && (

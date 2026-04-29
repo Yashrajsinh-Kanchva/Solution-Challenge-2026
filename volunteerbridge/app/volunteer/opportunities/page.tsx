@@ -257,7 +257,7 @@ export default function OpportunitiesPage() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div className="flex items-center gap-2 text-sm font-bold text-secondary/60">
                       <MapPin size={16} className="text-primary" />
-                      {typeof opp.location === "string" ? opp.location : opp.location?.address || "TBD"}
+                      {typeof opp?.location === "string" ? opp?.location : opp?.location?.address ?? "TBD"}
                     </div>
                     {opp.durationStart && (
                       <div className="flex items-center gap-2 text-sm font-bold text-secondary/60">

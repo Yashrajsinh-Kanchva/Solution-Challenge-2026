@@ -6,19 +6,19 @@ import { RequestRecord, RequestStatus } from "@/lib/types/rtdb";
 function toAdminNeedRequest(request: RequestRecord & Record<string, any>) {
   return {
     ...request,
-    id: request.id || request.requestId,
-    requestId: request.requestId,
+    id: request?.id ?? request?.requestId,
+    requestId: request?.requestId,
     location:
-      typeof request.location === "string"
-        ? request.location
-        : request.location?.address || "Unknown area",
-    rawLocation: request.location,
-    requestedBy: request.requestedBy || request.userName || request.userId,
-    beneficiaries: request.beneficiaries || request.affectedPeople || 1,
-    summary: request.summary || request.description,
-    status: request.status === "pending_admin" ? "pending" : request.status,
-    requestType: request.requestType || "ISSUE",
-    createdAt: request.createdAt || new Date().toISOString(),
+      typeof request?.location === "string"
+        ? request?.location
+        : request?.location?.address ?? "Unknown area",
+    rawLocation: request?.location,
+    requestedBy: request?.requestedBy ?? request?.userName ?? request?.userId,
+    beneficiaries: request?.beneficiaries ?? request?.affectedPeople ?? 1,
+    summary: request?.summary ?? request?.description ?? "No details provided",
+    status: request?.status === "pending_admin" ? "pending" : (request?.status ?? "pending"),
+    requestType: request?.requestType ?? "ISSUE",
+    createdAt: request?.createdAt ?? new Date().toISOString(),
   };
 }
 
@@ -46,8 +46,8 @@ export async function createRequest(req: AuthenticatedRequest, res: Response): P
       requestType: req.body.requestType || "ISSUE",
       title,
       description,
-      summary: description?.slice(0, 120) || "",
-      text: description || "",
+      summary: description?.slice(0, 120) ?? "",
+      text: description ?? "",
       category,
       aiCategory: aiCategory || category,
       urgency,

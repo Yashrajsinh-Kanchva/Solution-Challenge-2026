@@ -80,9 +80,9 @@ export default function NeedRequestTable({ requests, onStatusChange, onDelete, n
                       <div className="flex items-center gap-1.5 text-xs font-bold text-[#1A1C15]">
                         <MapPin size={12} className="text-[#6B7160]" />
                         <span className="truncate max-w-[120px]">
-                          {typeof req.location === "string" 
-                            ? req.location 
-                            : (req.location?.area_name || req.location?.address || "Unknown")}
+                          {typeof req?.location === "string" 
+                            ? req?.location 
+                            : (req?.location?.area_name ?? req?.location?.address ?? "Unknown")}
                         </span>
                       </div>
                     </td>
@@ -134,15 +134,15 @@ export default function NeedRequestTable({ requests, onStatusChange, onDelete, n
                             <div className="space-y-4">
                               <h4 className="text-[10px] font-black text-[#6B7160] uppercase tracking-widest">Impact Summary</h4>
                               <p className="text-sm font-medium text-[#1A1C15] leading-relaxed">
-                                {req.description || req.summary || "No detailed description provided."}
+                                {req?.description ?? req?.summary ?? "No detailed description provided."}
                               </p>
-                              {req.location && typeof req.location !== "string" && (
+                              {req?.location && typeof req?.location !== "string" && (
                                 <div className="pt-4 flex items-center gap-4 text-[#6B7160]">
                                   <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide">
-                                    <MapPin size={14} /> Latitude: {req.location.lat}
+                                    <MapPin size={14} /> Latitude: {req?.location?.lat ?? "—"}
                                   </div>
                                   <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide">
-                                    <MapPin size={14} /> Longitude: {req.location.lng}
+                                    <MapPin size={14} /> Longitude: {req?.location?.lng ?? "—"}
                                   </div>
                                 </div>
                               )}

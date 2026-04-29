@@ -190,7 +190,7 @@ export default function OpportunityDetailPage() {
                   <p className="text-[10px] font-black text-secondary/40 uppercase tracking-widest">Location</p>
                   <div className="flex items-center gap-2 text-sm font-bold text-on-surface">
                     <MapPin size={16} className="text-primary shrink-0" />
-                    {typeof opp.location === "string" ? opp.location : opp.location?.address || "TBD"}
+                    {typeof opp?.location === "string" ? opp?.location : opp?.location?.address ?? "TBD"}
                   </div>
                 </div>
                 <div className="p-5 bg-surface-variant/10 rounded-2xl border border-outline/30 space-y-1">
@@ -348,7 +348,7 @@ export default function OpportunityDetailPage() {
               <div className="space-y-3">
                 <div className="flex items-center gap-3 p-3 bg-surface-variant/10 rounded-xl">
                   <MapPin size={16} className="text-primary shrink-0" />
-                  <span className="text-xs font-bold text-on-surface">{typeof opp.location === "string" ? opp.location : opp.location?.address}</span>
+                  <span className="text-xs font-bold text-on-surface">{typeof opp?.location === "string" ? opp?.location : opp?.location?.address ?? "Location Not Specified"}</span>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-surface-variant/10 rounded-xl">
                   <Users size={16} className="text-primary shrink-0" />

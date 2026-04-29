@@ -22,7 +22,7 @@ export async function GET() {
       id: n.id || n.ngoId,
       ngoName: n.ngoName || n.name,
       status: n.status || (n.verified ? "approved" : "pending"),
-      area: n.area || n.location?.address || "Unassigned",
+      area: n?.area ?? n?.location?.address ?? "Unassigned",
     }));
 
     const normalizedCitizens = citizens.map((c: any) => ({

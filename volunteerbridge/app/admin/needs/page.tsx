@@ -85,7 +85,7 @@ export default function NeedsPage() {
       if (typeF     !== "all" && (r.requestType || "ISSUE") !== typeF) return false;
       if (q && !r.title?.toLowerCase().includes(q) &&
                !r.requestedBy?.toLowerCase().includes(q) &&
-               !String(typeof r.location === "string" ? r.location : r.location?.address || "").toLowerCase().includes(q)) return false;
+               !String(typeof r?.location === "string" ? r?.location : r?.location?.address ?? "").toLowerCase().includes(q)) return false;
       return true;
     });
   }, [requests, search, statusF, categoryF, urgencyF, typeF]);

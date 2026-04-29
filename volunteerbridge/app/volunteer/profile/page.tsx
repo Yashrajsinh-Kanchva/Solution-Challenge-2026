@@ -215,7 +215,7 @@ export default function VolunteerProfilePage() {
                     />
                   ) : (
                     <p className="text-sm font-bold text-on-surface px-4 py-3 bg-surface-variant/10 rounded-xl border border-outline/30">
-                      {typeof displayData?.location === "string" ? displayData.location : displayData?.location?.address || "—"}
+                      {typeof displayData?.location === "string" ? displayData?.location : displayData?.location?.address ?? "—"}
                     </p>
                   )}
                 </div>

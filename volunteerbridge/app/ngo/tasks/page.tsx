@@ -217,7 +217,7 @@ export default function NgoTasks() {
                       <p className="text-[10px] font-black text-secondary/40 uppercase tracking-widest">Location</p>
                       <div className="flex items-center gap-2.5 text-sm font-bold text-on-surface">
                         <MapPin size={18} className="text-primary" />
-                        {typeof req.location === "string" ? req.location : req.location.address}
+                        {typeof req?.location === "string" ? req?.location : req?.location?.address ?? "Location Not Specified"}
                       </div>
                     </div>
                     <div className="space-y-1.5 p-4 bg-surface-variant/10 rounded-2xl border border-outline/30 text-center">
@@ -373,7 +373,7 @@ export default function NgoTasks() {
                               <h5 className="text-lg font-black text-on-surface mb-1">{vol.name ?? "Unknown Volunteer"}</h5>
                               <div className="flex items-center gap-1.5 text-xs font-bold text-secondary/60 mb-6">
                                 <Navigation size={14} className="text-primary" />
-                                {vol.location?.address ?? "Location unavailable"}
+                                {vol?.location?.address ?? "Location unavailable"}
                               </div>
 
                               <div className="flex flex-wrap gap-2 mb-8">

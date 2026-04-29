@@ -81,7 +81,7 @@ export async function getAllNgos(req: AuthenticatedRequest, res: Response): Prom
       ngoName: n.ngoName || n.name,
       contactName: n.contactName || n.name,
       status: n.status || (n.verified ? "approved" : "pending"),
-      area: n.area || n.location?.address || "Unassigned",
+      area: n?.area ?? n?.location?.address ?? "Unassigned",
     })) : [];
     res.status(200).json(ngos);
   } catch (error) {
@@ -124,7 +124,7 @@ export async function getDashboardStats(req: AuthenticatedRequest, res: Response
       id: n.id || n.ngoId,
       ngoName: n.ngoName || n.name,
       status: n.status || (n.verified ? "approved" : "pending"),
-      area: n.area || n.location?.address || "Unassigned",
+      area: n?.area ?? n?.location?.address ?? "Unassigned",
     }));
     const normalizedCitizens = citizens.map((c: any) => ({
       ...c,
@@ -251,9 +251,9 @@ export async function getAnalytics(req: AuthenticatedRequest, res: Response): Pr
     // ── Volunteer deployment stats by zone / location ──
     const zoneCounts: Record<string, { deployed: number; target: number }> = {};
     volunteers.forEach((v: any) => {
-      const zone = typeof v.location === "string"
-        ? v.location.split(",")[0].trim()
-        : v.location?.address?.split(",")[0]?.trim() || "General";
+      const zone = typeof v?.location === "string"
+        ? v?.location.split(",")[0].trim()
+        : v?.location?.address?.split(",")[0]?.trim() ?? "General";
       if (!zoneCounts[zone]) zoneCounts[zone] = { deployed: 0, target: 0 };
       if (v.availability || v.status === "idle") zoneCounts[zone].deployed += 1;
       zoneCounts[zone].target += 1;

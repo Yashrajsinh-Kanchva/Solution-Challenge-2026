@@ -4,11 +4,17 @@ export interface NeedRequest {
 	id: string;
 	title: string;
 	category: string;
-	location: string;
-	urgency: "low" | "medium" | "high";
+	location: string | {
+		lat?: number;
+		lng?: number;
+		address?: string;
+		area_name?: string;
+	};
+	urgency: "low" | "medium" | "high" | "critical" | string;
 	requestedBy: string;
 	status: NeedStatus;
 	createdAt: string;
+	description?: string;
 }
 
 export interface PredictedArea {

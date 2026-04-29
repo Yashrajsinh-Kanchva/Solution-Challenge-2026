@@ -95,7 +95,7 @@ export default function NgoVolunteers() {
 
               <h4 className="text-xl font-black text-on-surface mb-1 group-hover:text-primary transition-colors">{v.name}</h4>
               <p className="text-xs font-bold text-secondary/40 flex items-center gap-2 mb-6">
-                <MapPin size={14} className="text-primary/60" /> {v.location?.address || "Main Area"}
+                <MapPin size={14} className="text-primary/60" /> {v?.location?.address ?? "Main Area"}
               </p>
 
               <div className="flex flex-wrap gap-2 mb-8">

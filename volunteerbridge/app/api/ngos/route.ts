@@ -12,7 +12,7 @@ export async function GET() {
       ngoName: n.ngoName || n.name,
       contactName: n.contactName || n.name,
       status: (n.status || (n.verified ? "approved" : "pending")).toLowerCase(),
-      area: n.area || n.location?.address || "Unassigned",
+      area: n?.area ?? n?.location?.address ?? "Unassigned",
     })) : [];
     return NextResponse.json(ngos);
   } catch (error) {

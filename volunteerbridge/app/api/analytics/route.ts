@@ -27,9 +27,9 @@ export async function GET() {
     // Volunteer deployment stats
     const zoneCounts: Record<string, { deployed: number; target: number }> = {};
     volunteers.forEach((v: any) => {
-      const zone = typeof v.location === "string"
-        ? v.location.split(",")[0].trim()
-        : v.location?.address?.split(",")[0]?.trim() || "General";
+      const zone = typeof v?.location === "string"
+        ? v?.location.split(",")[0].trim()
+        : v?.location?.address?.split(",")[0]?.trim() ?? "General";
       if (!zoneCounts[zone]) zoneCounts[zone] = { deployed: 0, target: 0 };
       if (v.availability || v.status === "idle") zoneCounts[zone].deployed += 1;
       zoneCounts[zone].target += 1;
