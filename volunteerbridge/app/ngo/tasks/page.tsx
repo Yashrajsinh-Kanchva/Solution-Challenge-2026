@@ -177,7 +177,7 @@ export default function NgoTasks() {
                           {req.status.replace(/_/g, " ")}
                         </span>
                         
-                        {(req.assignedVolunteers?.length > 0 || (req.assignedResources && Object.values(req.assignedResources).some(v => (v as number) > 0))) && (
+                        {(req.assignedVolunteers?.length > 0 || ((req.assignedResources || req.allocatedResources) && Object.values(req.assignedResources || req.allocatedResources).some(v => (v as number) > 0))) && (
                           <div className="flex flex-col items-end gap-2 p-3 bg-surface-variant/20 rounded-2xl border border-outline/30 mt-1">
                             {req.assignedVolunteers?.length > 0 && (
                               <div className="flex flex-col items-end gap-1.5">
@@ -192,16 +192,20 @@ export default function NgoTasks() {
                                 </div>
                               </div>
                             )}
-                            {req.assignedResources && (Object.values(req.assignedResources).some(v => (v as number) > 0)) && (
-                              <div className="flex flex-col items-end gap-1.5 mt-2 border-t border-outline/20 pt-2 w-full">
-                                <p className="text-[9px] font-black text-secondary/40 uppercase tracking-widest">Assigned Resources</p>
-                                <div className="flex flex-wrap justify-end gap-2">
-                                  {req.assignedResources.food > 0 && <span className="text-[9px] font-black px-2 py-0.5 bg-orange-50 text-orange-600 rounded-lg border border-orange-200 uppercase tracking-tighter">Food: {req.assignedResources.food}</span>}
-                                  {req.assignedResources.medicine > 0 && <span className="text-[9px] font-black px-2 py-0.5 bg-blue-50 text-blue-600 rounded-lg border border-blue-200 uppercase tracking-tighter">Med: {req.assignedResources.medicine}</span>}
-                                  {req.assignedResources.shelter > 0 && <span className="text-[9px] font-black px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg border border-purple-200 uppercase tracking-tighter">Shelter: {req.assignedResources.shelter}</span>}
+                            {(() => {
+                              const res = req.assignedResources || req.allocatedResources;
+                              if (!res || !Object.values(res).some(v => (v as number) > 0)) return null;
+                              return (
+                                <div className="flex flex-col items-end gap-1.5 mt-2 border-t border-outline/20 pt-2 w-full">
+                                  <p className="text-[9px] font-black text-secondary/40 uppercase tracking-widest">Assigned Resources</p>
+                                  <div className="flex flex-wrap justify-end gap-2">
+                                    {res.food > 0 && <span className="text-[9px] font-black px-2 py-0.5 bg-orange-50 text-orange-600 rounded-lg border border-orange-200 uppercase tracking-tighter">Food: {res.food}</span>}
+                                    {res.medicine > 0 && <span className="text-[9px] font-black px-2 py-0.5 bg-blue-50 text-blue-600 rounded-lg border border-blue-200 uppercase tracking-tighter">Med: {res.medicine}</span>}
+                                    {res.shelter > 0 && <span className="text-[9px] font-black px-2 py-0.5 bg-purple-50 text-purple-600 rounded-lg border border-purple-200 uppercase tracking-tighter">Shelter: {res.shelter}</span>}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
+                              );
+                            })()}
                           </div>
                         )}
                       </div>

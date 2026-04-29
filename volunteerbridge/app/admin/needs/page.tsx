@@ -71,13 +71,21 @@ export default function NeedsPage() {
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return requests.filter(Boolean).filter(r => {
-      if (statusF   !== "all" && r.status   !== statusF)   return false;
+      if (statusF !== "all") {
+        if (statusF === "pending") {
+          if (r.status !== "pending" && r.status !== "pending_admin") return false;
+        } else if (statusF === "approved") {
+          if (r.status !== "approved" && r.status !== "assigned_to_ngo") return false;
+        } else if (r.status !== statusF) {
+          return false;
+        }
+      }
       if (categoryF !== "all" && r.category !== categoryF) return false;
       if (urgencyF  !== "all" && r.urgency  !== urgencyF)  return false;
       if (typeF     !== "all" && (r.requestType || "ISSUE") !== typeF) return false;
       if (q && !r.title?.toLowerCase().includes(q) &&
                !r.requestedBy?.toLowerCase().includes(q) &&
-               !r.location?.toLowerCase().includes(q))      return false;
+               !String(typeof r.location === "string" ? r.location : r.location?.address || "").toLowerCase().includes(q)) return false;
       return true;
     });
   }, [requests, search, statusF, categoryF, urgencyF, typeF]);

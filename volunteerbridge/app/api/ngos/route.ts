@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-import { db } from "@/lib/firebaseAdmin";
 import { NextResponse } from "next/server";
 
 export async function GET() {
+  const { db } = await import("@/lib/firebaseAdmin");
   try {
     const snapshot = await db.ref("NGO").once("value");
     const ngos = snapshot.exists() ? Object.values(snapshot.val()).map((n: any) => ({
@@ -11,7 +11,7 @@ export async function GET() {
       id: n.id || n.ngoId,
       ngoName: n.ngoName || n.name,
       contactName: n.contactName || n.name,
-      status: n.status || (n.verified ? "approved" : "pending"),
+      status: (n.status || (n.verified ? "approved" : "pending")).toLowerCase(),
       area: n.area || n.location?.address || "Unassigned",
     })) : [];
     return NextResponse.json(ngos);
@@ -22,6 +22,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const { db } = await import("@/lib/firebaseAdmin");
   try {
     const payload = await request.json();
     const ngoId = `ngo-${Date.now()}`;

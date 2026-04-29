@@ -1,12 +1,12 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-import { db } from "@/lib/firebaseAdmin";
 import { NextResponse } from "next/server";
 
 export async function POST(
   request: Request,
   { params }: { params: { requestId: string } }
 ) {
+  const { db } = await import("@/lib/firebaseAdmin");
   try {
     const { requestId } = params;
     const body = await request.json();
@@ -17,8 +17,19 @@ export async function POST(
     }
 
     // Update request with assigned volunteer
-    await db.ref(`Request/${requestId}`).update({
-      assignedVolunteerId: volunteerId,
+    const requestRef = db.ref(`Request/${requestId}`);
+    const snap = await requestRef.once("value");
+    const currentData = snap.val() || {};
+    const existingIds = currentData.assignedVolunteerIds || [];
+    
+    // Add to list if not already there
+    const updatedIds = existingIds.includes(volunteerId) 
+      ? existingIds 
+      : [...existingIds, volunteerId];
+
+    await requestRef.update({
+      assignedVolunteerId: volunteerId, // Primary/Legacy
+      assignedVolunteerIds: updatedIds,  // Array for dashboard fetch
       status: "assigned_to_volunteer"
     });
 

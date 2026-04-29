@@ -11,7 +11,7 @@ interface ReportCardProps {
   description:   string;
   summary:       string;
   urgency:       string;
-  location:      { lat: number; lng: number; address: string };
+  location:      any;
   beneficiaries: number;
   createdAt:     string;
   status:        "pending" | "in_progress" | "resolved" | string;
@@ -83,8 +83,11 @@ export default function ReportCard({
 
       {/* Meta row */}
       <div style={metaRow}>
-        {location.address && (
-          <MetaChip icon={<MapPin size={12} />} text={location.address.split(",")[0]} />
+        {(typeof location === "string" ? location : location?.address) && (
+          <MetaChip 
+            icon={<MapPin size={12} />} 
+            text={(typeof location === "string" ? location : location.address).split(",")[0]} 
+          />
         )}
         {urgency && (
           <span style={{ ...badge, background:sev.bg, color:sev.text, border:`1px solid ${sev.border}` }}>

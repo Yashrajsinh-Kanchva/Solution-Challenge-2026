@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { HeartHandshake, Loader2, CheckCircle2, UserCircle2, MapPin } from "lucide-react";
+import { getCookie } from "@/lib/utils/cookies";
 
 interface HelpPayload {
   title: string;
@@ -12,6 +13,7 @@ interface HelpPayload {
   location: { lat: number; lng: number; area_name: string };
   beneficiaries: number;
   requestedBy: string;
+  userId: string;
   requestType: "HELP";
 }
 
@@ -42,6 +44,8 @@ export default function HelpForm() {
     if (!validate()) return;
     setStatus("submitting");
 
+    const citizenId = getCookie("vb_citizen_id") || "mock-citizen-id";
+
     const payload: HelpPayload = {
       title: title.trim(),
       category,
@@ -50,7 +54,8 @@ export default function HelpForm() {
       urgency,
       location,
       beneficiaries: 1, // Personal help usually defaults to 1
-      requestedBy: anonymous ? "Anonymous User" : "", // If not anonymous, API will use citizen ID
+      requestedBy: anonymous ? "Anonymous User" : citizenId,
+      userId: citizenId,
       requestType: "HELP",
     };
 

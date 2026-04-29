@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-import { db } from "@/lib/firebaseAdmin";
 import { NextResponse } from "next/server";
 
 export async function GET() {
+  const { db } = await import("@/lib/firebaseAdmin");
   try {
     const snapshot = await db.ref("Assignment").once("value");
     const assignments = snapshot.exists() ? Object.values(snapshot.val()) : [];
@@ -15,6 +15,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const { db } = await import("@/lib/firebaseAdmin");
   try {
     const { ngoName, campus, coordinator } = await request.json();
     const assignmentId = `assign-${Date.now()}`;

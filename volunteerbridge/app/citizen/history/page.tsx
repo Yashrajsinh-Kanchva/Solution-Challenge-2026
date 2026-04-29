@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { ClipboardList, Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import ReportCard from "@/components/citizen/ReportCard";
+import { apiClient } from "@/lib/api/client";
+import { getCookie } from "@/lib/utils/cookies";
 
 type Report = {
   id: string;
@@ -33,31 +35,38 @@ export default function MyReportsPage() {
   const [error,     setError]     = useState("");
   const [filter,    setFilter]    = useState<Filter>("all");
 
-  const fetchReports = () => {
+  const fetchReports = async () => {
     setLoading(true);
     setError("");
-    fetch("/api/requests")
-      .then(r => r.json())
-      .then(data => {
-        if (data.error) throw new Error(data.error);
-        setReports(data.requests ?? []);
-      })
-      .catch(e => setError(e.message ?? "Failed to load requests"))
-      .finally(() => setLoading(false));
+    try {
+      const citizenId = getCookie("vb_citizen_id") || "mock-citizen-id";
+      const data = await apiClient.getRequests();
+      // Filter only reports belonging to this user
+      const userReports = (data || []).filter((r: any) => r.userId === citizenId);
+      setReports(userReports);
+    } catch (e: any) {
+      setError(e.message ?? "Failed to load requests");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { fetchReports(); }, []);
 
   const filtered = filter === "all"
     ? reports
-    : reports.filter(r => r.status === filter);
+    : reports.filter(r => {
+        if (filter === "pending") return r.status === "pending" || r.status === "pending_admin";
+        if (filter === "in_progress") return r.status === "in_progress" || r.status === "assigned_to_ngo" || r.status === "approved";
+        return r.status === filter;
+      });
 
   /* ── Counts ── */
   const counts: Record<Filter, number> = {
     all:         reports.length,
-    pending:     reports.filter(r => r.status === "pending").length,
-    in_progress: reports.filter(r => r.status === "in_progress").length,
-    resolved:    reports.filter(r => r.status === "resolved").length,
+    pending:     reports.filter(r => r.status === "pending" || r.status === "pending_admin").length,
+    in_progress: reports.filter(r => r.status === "in_progress" || r.status === "assigned_to_ngo" || r.status === "approved").length,
+    resolved:    reports.filter(r => r.status === "resolved" || r.status === "completed").length,
   };
 
   return (

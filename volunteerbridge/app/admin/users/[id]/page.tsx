@@ -55,7 +55,7 @@ export default function UserDetailPage({ params }: UserDetailPageProps) {
 				</article>
 				<article className="tool-surface">
 					<p className="section-kicker">Contact & Region</p>
-					<h3>{user.location}</h3>
+					<h3>{typeof user.location === "string" ? user.location : (user.location as any)?.address || "No Location"}</h3>
 					<div className="detail-list">
 						<div>
 							<span>Phone</span>

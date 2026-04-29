@@ -6,6 +6,7 @@ import {
   MapPin, Upload, X, AlertTriangle, CheckCircle2,
   Loader2, ImageIcon, Video,
 } from "lucide-react";
+import { getCookie } from "@/lib/utils/cookies";
 
 const LocationPickerMap = dynamic(() => import("./LocationPickerMap"), { ssr: false, loading: () => <div style={{ height: "300px", display: "flex", alignItems: "center", justifyContent: "center", background: "#f6f3ed", borderRadius: "12px", border: "2px solid #ccd6a6", marginTop: "1rem" }}><Loader2 className="animate-spin text-secondary" /></div> });
 
@@ -23,6 +24,7 @@ interface RequestPayload {
   location:      { lat: string; lng: string; area_name: string };
   beneficiaries: number;
   requestedBy:   string;
+  userId:        string;
   requestType:   "ISSUE";
 }
 
@@ -147,6 +149,8 @@ export default function NeedForm() {
     // Auto-generate summary from first sentence of description
     const summaryText = description.trim().split(/[.!?]/)[0]?.trim().slice(0, 120) || description.trim().slice(0, 120);
 
+    const citizenId = getCookie("vb_citizen_id") || "mock-citizen-id";
+
     const payload: RequestPayload = {
       title:         title.trim() || CATEGORIES.find(c => c.id === category)?.label || category,
       category,
@@ -155,7 +159,8 @@ export default function NeedForm() {
       urgency:       urgencyMap[urgency] ?? "low",
       location,
       beneficiaries,
-      requestedBy:   "", // filled server-side from citizenId
+      requestedBy:   citizenId,
+      userId:        citizenId,
       requestType:   "ISSUE",
     };
 

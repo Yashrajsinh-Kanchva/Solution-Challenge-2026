@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import StatusBadge from "@/components/admin/StatusBadge";
 import type { ManagedNeedRequest } from "@/lib/types/admin";
 import { formatDateLabel } from "@/lib/utils/formatters";
@@ -57,70 +57,143 @@ export default function NeedRequestTable({ requests, onStatusChange, onDelete, n
           <tbody>
             {requests.map((req) => {
               const isExpanded = expandedId === req.id;
-              const isPending  = req.status === "pending";
+              const isPending  = req.status === "pending" || req.status === "pending_admin";
 
               return (
-                <tr key={req.id} className={`group transition-all duration-200 ${isExpanded ? "bg-[#F7F5EE]/50" : "bg-white hover:shadow-md"}`}>
-                  <td className={`py-5 pl-6 rounded-l-[24px] border-y-2 border-l-2 border-transparent group-hover:border-[#E8EDD0] ${isExpanded ? "border-[#E8EDD0]" : ""}`}>
-                    <div className="flex flex-col gap-1 max-w-[280px]">
-                      <span className="text-sm font-black text-[#1A1C15] leading-tight">{req.title}</span>
-                      <span className="text-xs font-medium text-[#6B7160] line-clamp-1">{req.summary}</span>
-                    </div>
-                  </td>
-                  <td className={`py-5 border-y-2 border-transparent group-hover:border-[#E8EDD0] ${isExpanded ? "border-[#E8EDD0]" : ""}`}>
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-[#4D5A2C] bg-[#EEF3D2] px-2 py-0.5 rounded-md uppercase tracking-wider w-fit mb-1">
-                        {req.requestType || "ISSUE"}
+                <Fragment key={req.id}>
+                  <tr className={`group transition-all duration-200 ${isExpanded ? "bg-[#F7F5EE]/50" : "bg-white hover:shadow-md"}`}>
+                    <td className={`py-5 pl-6 rounded-l-[24px] border-y-2 border-l-2 border-transparent group-hover:border-[#E8EDD0] ${isExpanded ? "border-[#E8EDD0]" : ""}`}>
+                      <div className="flex flex-col gap-1 max-w-[280px]">
+                        <span className="text-sm font-black text-[#1A1C15] leading-tight">{req.title}</span>
+                        <span className="text-xs font-medium text-[#6B7160] line-clamp-1">{req.summary}</span>
+                      </div>
+                    </td>
+                    <td className={`py-5 border-y-2 border-transparent group-hover:border-[#E8EDD0] ${isExpanded ? "border-[#E8EDD0]" : ""}`}>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-[#4D5A2C] bg-[#EEF3D2] px-2 py-0.5 rounded-md uppercase tracking-wider w-fit mb-1">
+                          {req.requestType || "ISSUE"}
+                        </span>
+                        <span className="text-xs font-bold text-[#6B7160]">{req.category}</span>
+                      </div>
+                    </td>
+                    <td className={`py-5 border-y-2 border-transparent group-hover:border-[#E8EDD0] ${isExpanded ? "border-[#E8EDD0]" : ""}`}>
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#1A1C15]">
+                        <MapPin size={12} className="text-[#6B7160]" />
+                        <span className="truncate max-w-[120px]">
+                          {typeof req.location === "string" 
+                            ? req.location 
+                            : (req.location?.area_name || req.location?.address || "Unknown")}
+                        </span>
+                      </div>
+                    </td>
+                    <td className={`py-5 border-y-2 border-transparent group-hover:border-[#E8EDD0] ${isExpanded ? "border-[#E8EDD0]" : ""}`}>
+                      <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${URGENCY_STYLES[req.urgency] || URGENCY_STYLES.medium}`}>
+                        {req.urgency}
                       </span>
-                      <span className="text-xs font-bold text-[#6B7160]">{req.category}</span>
-                    </div>
-                  </td>
-                  <td className={`py-5 border-y-2 border-transparent group-hover:border-[#E8EDD0] ${isExpanded ? "border-[#E8EDD0]" : ""}`}>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#1A1C15]">
-                      <MapPin size={12} className="text-[#6B7160]" />
-                      <span className="truncate max-w-[120px]">{req.location}</span>
-                    </div>
-                  </td>
-                  <td className={`py-5 border-y-2 border-transparent group-hover:border-[#E8EDD0] ${isExpanded ? "border-[#E8EDD0]" : ""}`}>
-                    <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${URGENCY_STYLES[req.urgency] || URGENCY_STYLES.medium}`}>
-                      {req.urgency}
-                    </span>
-                  </td>
-                  <td className={`py-5 border-y-2 border-transparent group-hover:border-[#E8EDD0] ${isExpanded ? "border-[#E8EDD0]" : ""}`}>
-                    <div className="flex items-center gap-1.5">
-                      <Users size={14} className="text-[#4D5A2C]" />
-                      <span className="text-sm font-black text-[#1A1C15]">{req.beneficiaries.toLocaleString()}</span>
-                    </div>
-                  </td>
-                  <td className={`py-5 border-y-2 border-transparent group-hover:border-[#E8EDD0] ${isExpanded ? "border-[#E8EDD0]" : ""}`}>
-                    <StatusBadge status={req.status} />
-                  </td>
-                  <td className={`py-5 pr-6 rounded-r-[24px] border-y-2 border-r-2 border-transparent group-hover:border-[#E8EDD0] ${isExpanded ? "border-[#E8EDD0]" : ""} text-right`}>
-                    <div className="flex items-center justify-end gap-2">
-                      <button 
-                        onClick={() => setExpandedId(isExpanded ? null : req.id)}
-                        className={`p-2 rounded-lg transition-all ${isExpanded ? "bg-[#4D5A2C] text-white" : "text-[#4D5A2C] hover:bg-[#EEF3D2]"}`}
-                      >
-                        <Eye size={18} strokeWidth={2.5} />
-                      </button>
-                      {isPending && (
-                        <>
-                          <button onClick={() => onStatusChange(req.id, "approved")} className="p-2 text-[#2E7D32] hover:bg-green-50 rounded-lg transition-all">
-                            <Check size={18} strokeWidth={3} />
-                          </button>
-                          <button onClick={() => onStatusChange(req.id, "rejected")} className="p-2 text-[#BA1A1A] hover:bg-red-50 rounded-lg transition-all">
-                            <X size={18} strokeWidth={3} />
-                          </button>
-                        </>
-                      )}
-                      {!isPending && onDelete && (
-                        <button onClick={() => onDelete(req.id)} className="p-2 text-[#6B7160] hover:text-[#BA1A1A] hover:bg-red-50 rounded-lg transition-all">
-                          <Trash2 size={18} />
+                    </td>
+                    <td className={`py-5 border-y-2 border-transparent group-hover:border-[#E8EDD0] ${isExpanded ? "border-[#E8EDD0]" : ""}`}>
+                      <div className="flex items-center gap-1.5">
+                        <Users size={14} className="text-[#4D5A2C]" />
+                        <span className="text-sm font-black text-[#1A1C15]">{(req.beneficiaries || 0).toLocaleString()}</span>
+                      </div>
+                    </td>
+                    <td className={`py-5 border-y-2 border-transparent group-hover:border-[#E8EDD0] ${isExpanded ? "border-[#E8EDD0]" : ""}`}>
+                      <StatusBadge status={req.status} />
+                    </td>
+                    <td className={`py-5 pr-6 rounded-r-[24px] border-y-2 border-r-2 border-transparent group-hover:border-[#E8EDD0] ${isExpanded ? "border-[#E8EDD0]" : ""} text-right`}>
+                      <div className="flex items-center justify-end gap-2">
+                        <button 
+                          onClick={() => setExpandedId(isExpanded ? null : req.id)}
+                          className={`p-2 rounded-lg transition-all ${isExpanded ? "bg-[#4D5A2C] text-white" : "text-[#4D5A2C] hover:bg-[#EEF3D2]"}`}
+                        >
+                          <Eye size={18} strokeWidth={2.5} />
                         </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
+                        {isPending && (
+                          <>
+                            <button onClick={() => onStatusChange(req.id, "approved")} className="p-2 text-[#2E7D32] hover:bg-green-50 rounded-lg transition-all">
+                              <Check size={18} strokeWidth={3} />
+                            </button>
+                            <button onClick={() => onStatusChange(req.id, "rejected")} className="p-2 text-[#BA1A1A] hover:bg-red-50 rounded-lg transition-all">
+                              <X size={18} strokeWidth={3} />
+                            </button>
+                          </>
+                        )}
+                        {!isPending && onDelete && (
+                          <button onClick={() => onDelete(req.id)} className="p-2 text-[#6B7160] hover:text-[#BA1A1A] hover:bg-red-50 rounded-lg transition-all">
+                            <Trash2 size={18} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                  {isExpanded && (
+                    <tr>
+                      <td colSpan={7} className="px-6 pb-6">
+                        <div className="bg-[#F7F5EE] border-2 border-[#E8EDD0] rounded-[32px] p-8 animate-in slide-in-from-top-2 duration-300">
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                            <div className="space-y-4">
+                              <h4 className="text-[10px] font-black text-[#6B7160] uppercase tracking-widest">Impact Summary</h4>
+                              <p className="text-sm font-medium text-[#1A1C15] leading-relaxed">
+                                {req.description || req.summary || "No detailed description provided."}
+                              </p>
+                              {req.location && typeof req.location !== "string" && (
+                                <div className="pt-4 flex items-center gap-4 text-[#6B7160]">
+                                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide">
+                                    <MapPin size={14} /> Latitude: {req.location.lat}
+                                  </div>
+                                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide">
+                                    <MapPin size={14} /> Longitude: {req.location.lng}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="space-y-6">
+                              <h4 className="text-[10px] font-black text-[#6B7160] uppercase tracking-widest">Administrative Assignment</h4>
+                              
+                              {(req.status as string) === "approved" || (req.status as string) === "assigned_to_ngo" ? (
+                                <div className="space-y-4">
+                                  <div className="flex gap-3">
+                                    <select 
+                                      className="flex-1 p-4 bg-white border-2 border-[#E8EDD0] rounded-2xl text-sm font-bold text-[#1A1C15] outline-none focus:border-[#4D5A2C] transition-colors"
+                                      value={selectedNgo[req.id] || (req as any).assignedNgoId || ""}
+                                      onChange={(e) => setSelectedNgo(prev => ({ ...prev, [req.id]: e.target.value }))}
+                                    >
+                                      <option value="" disabled>Choose an Organization...</option>
+                                      {ngos.map(n => (
+                                        <option key={n.ngoId} value={n.ngoId}>{n.ngoName || n.name}</option>
+                                      ))}
+                                    </select>
+                                    <button 
+                                      onClick={() => onAssignNgo?.(req.id, selectedNgo[req.id] || (req as any).assignedNgoId || "")}
+                                      disabled={!(selectedNgo[req.id] || (req as any).assignedNgoId)}
+                                      className="px-8 py-4 bg-[#4D5A2C] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-[#647A39] transition-all disabled:opacity-50 shadow-lg shadow-[#4D5A2C]/10 flex items-center gap-2"
+                                    >
+                                      <UserPlus size={16} /> Assign
+                                    </button>
+                                  </div>
+                                  {(req as any).assignedNgoId && (
+                                    <div className="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-100 rounded-xl text-[#2E7D32] text-[10px] font-black uppercase tracking-widest">
+                                      <CheckCircle size={14} /> Assigned to: {ngos.find(n => n.ngoId === (req as any).assignedNgoId)?.ngoName || "NGO Partners"}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-3 p-6 bg-amber-50 border-2 border-amber-100 rounded-[24px] text-amber-800">
+                                  <AlertTriangle size={20} />
+                                  <div>
+                                    <p className="text-[11px] font-black uppercase tracking-widest">Pending Review</p>
+                                    <p className="text-[10px] font-bold opacity-80">Approve this request first to unlock NGO assignment tools.</p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               );
             })}
           </tbody>
@@ -158,7 +231,7 @@ export default function NeedRequestTable({ requests, onStatusChange, onDelete, n
                 <p className="text-[10px] font-black text-[#6B7160]/50 uppercase tracking-widest mb-1">Impact</p>
                 <div className="flex items-center gap-1.5 font-black text-sm text-[#1A1C15]">
                   <Users size={14} className="text-[#4D5A2C]" />
-                  {req.beneficiaries.toLocaleString()}
+                  {(req.beneficiaries || 0).toLocaleString()}
                 </div>
               </div>
             </div>
@@ -172,7 +245,7 @@ export default function NeedRequestTable({ requests, onStatusChange, onDelete, n
                 {expandedId === req.id ? "Close Details" : "Review & Manage"}
               </button>
               
-              {req.status === "pending" && (
+              {(req.status === "pending" || req.status === "pending_admin") && (
                 <div className="grid grid-cols-2 gap-2">
                   <button onClick={() => onStatusChange(req.id, "approved")} className="py-3 bg-[#4D5A2C] text-white rounded-xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
                     <Check size={14} strokeWidth={3} /> Approve

@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-import { db } from "@/lib/firebaseAdmin";
 import { NextResponse } from "next/server";
 
 export async function GET() {
+  const { db } = await import("@/lib/firebaseAdmin");
   try {
     const snapshot = await db.ref("Volunteer").once("value");
     const volunteers = snapshot.exists() ? Object.values(snapshot.val()).map((v: any) => ({

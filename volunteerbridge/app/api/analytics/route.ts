@@ -1,10 +1,10 @@
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-import { db } from "@/lib/firebaseAdmin";
 import { NextResponse } from "next/server";
 
 export async function GET() {
+  const { db } = await import("@/lib/firebaseAdmin");
   try {
     const [ngoSnap, volunteerSnap, requestSnap] = await Promise.all([
       db.ref("NGO").once("value"),

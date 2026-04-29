@@ -9,16 +9,16 @@ export async function PATCH(
   const { db } = await import("@/lib/firebaseAdmin");
   try {
     const { ngoId } = params;
-    const { status, reviewReason } = await request.json();
+    const resources = await request.json();
     
+    // The NGO stats API expects 'availableResources'
     await db.ref(`NGO/${ngoId}`).update({ 
-      status: status || "approved",
-      reviewReason: reviewReason || null
+      availableResources: resources 
     });
 
-    return NextResponse.json({ message: `NGO ${status}`, ngoId });
+    return NextResponse.json({ message: "Inventory updated", resources });
   } catch (error) {
-    console.error("API Error (approve NGO):", error);
-    return NextResponse.json({ error: "Failed to update NGO status" }, { status: 500 });
+    console.error("API Error (update resources):", error);
+    return NextResponse.json({ error: "Failed to update inventory" }, { status: 500 });
   }
 }

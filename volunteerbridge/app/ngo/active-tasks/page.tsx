@@ -63,6 +63,7 @@ export default function ActiveTasks() {
     const active = data.filter((req: any) => 
       req.status === "Accepted" || 
       req.status === "assigned_to_volunteer" || 
+      req.status === "dispatched" || 
       req.status === "in_progress"
     );
     setTasks(active);
@@ -227,27 +228,31 @@ export default function ActiveTasks() {
                       <div className="text-right">
                         <p className="text-[10px] font-black text-secondary/40 uppercase tracking-widest mb-3">Resources</p>
                         <div className="flex flex-col items-end gap-1.5">
-                          {task.assignedResources && (Object.values(task.assignedResources).some(v => (v as number) > 0)) ? (
-                            <>
-                              {task.assignedResources.food > 0 && (
-                                <div className="flex items-center gap-2 text-[10px] font-black text-orange-600 bg-orange-50 px-3 py-1 rounded-lg border border-orange-100 shadow-sm">
-                                  <Utensils size={10} /> {task.assignedResources.food}
-                                </div>
-                              )}
-                              {task.assignedResources.medicine > 0 && (
-                                <div className="flex items-center gap-2 text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-lg border border-blue-100 shadow-sm">
-                                  <Activity size={10} /> {task.assignedResources.medicine}
-                                </div>
-                              )}
-                              {task.assignedResources.shelter > 0 && (
-                                <div className="flex items-center gap-2 text-[10px] font-black text-purple-600 bg-purple-50 px-3 py-1 rounded-lg border border-purple-100 shadow-sm">
-                                  <Home size={10} /> {task.assignedResources.shelter}
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <div className="text-[10px] font-black text-secondary/40 italic bg-surface-variant/20 px-3 py-1.5 rounded-lg border border-dashed border-outline/60">No Resources</div>
-                          )}
+                          {(() => {
+                            const res = task.assignedResources || task.allocatedResources;
+                            if (!res || !Object.values(res).some(v => (v as number) > 0)) {
+                              return <div className="text-[10px] font-black text-secondary/40 italic bg-surface-variant/20 px-3 py-1.5 rounded-lg border border-dashed border-outline/60">No Resources</div>;
+                            }
+                            return (
+                              <>
+                                {res.food > 0 && (
+                                  <div className="flex items-center gap-2 text-[10px] font-black text-orange-600 bg-orange-50 px-3 py-1 rounded-lg border border-orange-100 shadow-sm">
+                                    <Utensils size={10} /> {res.food}
+                                  </div>
+                                )}
+                                {res.medicine > 0 && (
+                                  <div className="flex items-center gap-2 text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-lg border border-blue-100 shadow-sm">
+                                    <Activity size={10} /> {res.medicine}
+                                  </div>
+                                )}
+                                {res.shelter > 0 && (
+                                  <div className="flex items-center gap-2 text-[10px] font-black text-purple-600 bg-purple-50 px-3 py-1 rounded-lg border border-purple-100 shadow-sm">
+                                    <Home size={10} /> {res.shelter}
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>

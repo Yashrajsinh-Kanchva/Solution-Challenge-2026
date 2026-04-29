@@ -1,20 +1,13 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from "next/server";
-import { initFirebaseAdmin } from "@/lib/firebase/config";
-import { getDatabase } from "firebase-admin/database";
-
-// Ensure Firebase is initialized
-function getDb() {
-  initFirebaseAdmin();
-  return getDatabase();
-}
 
 // GET /api/citizens           → slim list (id, name, area, status)
 // GET /api/citizens?id=cit-01 → full profile with reports
 export async function GET(req: NextRequest) {
+  const { getRealtimeDb } = await import("@/lib/firebase/config");
   try {
-    const db = getDb();
+    const db = getRealtimeDb();
     const id = req.nextUrl.searchParams.get("id");
 
     if (!id) {
